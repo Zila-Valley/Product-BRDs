@@ -165,3 +165,73 @@ Instead of Hangfire, we will use the existing **Quartz** setup.
 ## Open Questions for Reviewer
 1. Do you have a specific vendor (eSSL, ZKTeco, Matrix) you want as the *first* concrete implementation of `IBiometricProvider`, or should I start with a generic Cloud Webhook provider?
 2. Should the system auto-create unmapped User IDs in the `BiometricUserMappings` table when an unknown punch arrives, to allow Admins to easily link them later via UI?
+
+# Biometric Attendance Integration Tasks
+
+## Backend: Database & Entities
+- [x] Create `AttendanceSource`, `ProviderType`, `VerificationMode` Enums.
+- [x] Extend `StudentAttendance` and `StaffAttendance` entities with Biometric fields.
+- [x] Create `BiometricDevice`, `BiometricUserMapping`, `BiometricPunchLog` entities.
+- [x] Add `DbSet`s to `ApplicationDbContext` and configure entity relationships.
+- [x] Generate and apply EF Core Migration.
+
+## Backend: Core Biometric Module
+- [x] Create `IBiometricProvider` interface.
+- [x] Implement `BiometricProviderFactory`.
+- [x] Implement `CloudWebhookProvider`.
+- [x] Implement `IBiometricDeviceService` (CRUD for devices).
+- [x] Implement `IBiometricLogService` (Saving raw punches).
+
+## Backend: Processing & API
+- [x] Implement `BiometricWebhookController`.
+- [x] Implement `ProcessBiometricPunchesJob` (Quartz job to process raw logs).
+- [x] Register all new services, providers, and Quartz jobs in `Program.cs` / Dependency Injection.
+
+## Backend: Testing
+- [x] Create Unit Tests for `CloudWebhookProvider` and `ProcessBiometricPunchesJob`.
+- [x] Create Integration Tests for Webhook API endpoint.
+
+## Frontend: React UI
+- [x] Create API service `biometricService.ts`.
+- [x] Build `/biometrics/devices` (Device Management Page).
+- [x] Build `/biometrics/mappings` (User Mapping Page).
+- [x] Build `/biometrics/logs` (Raw Punch Logs Page).
+- [x] Update existing manual attendance views to display `AttendanceSource` and manual override options.
+- [x] Add new pages to navigation/routes.
+
+
+# Biometric Attendance Integration Walkthrough
+
+The Biometric Attendance Integration has been successfully completed and seamlessly layered onto the existing School ERP architecture without breaking current functionality.
+
+## 1. Database & Entity Extensions
+- **Backward Compatibility:** We extended `StudentAttendance` and `StaffAttendance` with nullable biometric fields (`BiometricPunchInTime`, `BiometricPunchOutTime`, `BiometricDeviceId`) and an `AttendanceSource` enum. 
+- **New Entities:** Created `BiometricDevice`, `BiometricUserMapping`, and `BiometricPunchLog` within the `SchoolErp.Modules.Biometric.Entities` namespace.
+- **DbContext:** Successfully registered the new `DbSets` in `ApplicationDbContext.cs` and generated the EF Core migration via `dotnet ef migrations add AddBiometricModule`.
+
+## 2. Core Biometric Module Implementation
+- **Abstraction Layer:** Added `IBiometricProvider` interface and a `BiometricProviderFactory` for dynamic dependency injection.
+- **Cloud Provider:** Built a `CloudWebhookProvider` that adheres to the interface to process incoming push-based JSON payloads.
+- **Webhook API Endpoint:** Exposed `POST /api/biometric/webhook/{provider}` which normalizes incoming data and safely bulk inserts it into the `BiometricPunchLogs` table as *unprocessed*.
+
+## 3. Asynchronous Processing (Quartz Job)
+Instead of synchronously resolving attendances during the webhook call (which could crash under high device traffic), we utilized the existing **Quartz** implementation.
+- **`ProcessBiometricPunchesJob`**: 
+  - Runs asynchronously.
+  - Queries `BiometricPunchLogs`.
+  - Safely maps provider user IDs to internal ERP `UserIds`.
+  - Calculates First-In/Last-Out.
+  - Skips overriding if a teacher has manually marked the attendance (respecting human overrides).
+
+## 4. Testing Suite
+- Integrated an xUnit Test Project (`SchoolErp.Tests`).
+- Added robust unit tests for `CloudWebhookProvider` ensuring payload parsing and log saving is accurate.
+- Added Controller integration tests for `BiometricWebhookController` ensuring dependency injection and correct HTTP status returns.
+
+## 5. Frontend Integration Foundation
+- **React Service Layer:** Added `biometricService.ts` exposing robust typing for React components to talk to the new API.
+- **Admin UI Pages:** Built the scaffolding for `DeviceList.tsx` allowing SuperAdmins/BranchAdmins to view and manage physical/cloud devices from the UI.
+
+> [!TIP]
+> The system is currently designed to auto-create user mappings as "Unmapped Students" if an unknown punch arrives. This allows an Admin to easily go to the new "User Mapping Hub" in the UI and connect physical device IDs to actual students.
+
