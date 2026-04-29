@@ -232,6 +232,51 @@ Instead of synchronously resolving attendances during the webhook call (which co
 - **React Service Layer:** Added `biometricService.ts` exposing robust typing for React components to talk to the new API.
 - **Admin UI Pages:** Built the scaffolding for `DeviceList.tsx` allowing SuperAdmins/BranchAdmins to view and manage physical/cloud devices from the UI.
 
+The **Biometric Module** is designed to act as a bridge between physical attendance hardware (like ZKTeco fingerprint or face scanners) and your School ERP’s attendance records.
+
+Here is a breakdown of how the module works and how you can use it for students and staff:
+
+### **1. Core Components**
+*   **`BiometricDevice`**: Stores information about the physical scanners (IP address, location, serial number).
+*   **`BiometricUserMapping`**: This is the "link." It maps a **ProviderUserId** (the ID assigned to a person on the physical device, e.g., `101`) to a specific **Student** or **Staff** in your database.
+*   **`BiometricPunchLog`**: Stores raw data. Every time someone scans their finger/face, a "punch" is recorded here with a timestamp.
+
+### **2. Workflow for Attendance**
+
+#### **Step A: Enrollment & Mapping**
+1.  **Register on Device**: Enroll the student/staff on the biometric machine and assign them an ID (e.g., Student Rahul is ID `5001` on the machine).
+2.  **Link in ERP**: In the ERP system, create a mapping that says `Machine ID 5001 = Student Rahul`.
+
+#### **Step B: Data Synchronization**
+The physical device pushes logs to the API (or the API pulls them via a Provider). These raw logs are saved in the `BiometricPunchLogs` table.
+
+#### **Step C: Automated Processing (`ProcessBiometricPunchesJob`)**
+The system runs a background job (using Quartz) that processes these raw logs:
+1.  **In/Out Calculation**: It groups all punches for a user on a specific day.
+    *   **First Punch** of the day = **In-Time**.
+    *   **Last Punch** of the day = **Out-Time**.
+2.  **Attendance Generation**:
+    *   It automatically creates a record in the `StudentAttendance` or `StaffAttendance` table.
+    *   It sets the `Status` to **Present**.
+    *   It marks the `Source` as **Biometric**.
+3.  **Conflict Handling**: If a teacher has already marked a student as "Absent" manually, the biometric job is configured to respect that manual entry and not overwrite it.
+
+### **3. How to use it for Students vs. Staff**
+
+| Feature | Student Use Case | Staff Use Case |
+| :--- | :--- | :--- |
+| **Mapping** | Linked to `StudentId`. | Linked to `StaffId`. |
+| **Attendance Table** | Updates `StudentAttendances`. | Updates `StaffAttendances`. |
+| **Late Arrival** | Can be used to trigger SMS alerts to parents if the first punch is after school start time. | Used for payroll calculation based on total "Work Hours" (Out-time minus In-time). |
+| **Location** | Usually installed at the school gate or classroom. | Usually installed at the staff room or main entrance. |
+
+### **Summary of Benefits**
+*   **Zero Manual Entry**: Teachers don't need to take roll calls; the system populates attendance automatically.
+*   **Accuracy**: Records the exact second a student or staff member entered/left.
+*   **Tamper Proof**: Prevents "proxy" attendance where one student marks another present.
+
+Would you like me to show you how to configure the **Mapping UI** or check the **Device Provider** settings to ensure your hardware can communicate with this module?
+
 > [!TIP]
 > The system is currently designed to auto-create user mappings as "Unmapped Students" if an unknown punch arrives. This allows an Admin to easily go to the new "User Mapping Hub" in the UI and connect physical device IDs to actual students.
 
