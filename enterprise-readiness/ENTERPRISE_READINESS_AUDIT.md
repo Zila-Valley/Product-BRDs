@@ -1,0 +1,239 @@
+# Enterprise Readiness Audit
+
+Date: 2026-05-03  
+Scope: `api/`, `web/`, database scripts, seeders, tests, and repository documentation.
+
+## A. Executive Summary
+
+This product is not enterprise-ready and should not be sold to a real education Trust yet. The current implementation is best classified as an MVP/demo-grade modular monolith with several promising foundations, but also several critical gaps that can cause tenant leakage, branch confusion, billing abuse, schema drift, and incorrect academic modeling for Indian education groups.
+
+The implementation has useful foundations:
+
+- A `Client` and `Branch` model exists, with `Branch` acting as an institution/campus under a client.
+- EF Core global query filters exist for `ClientId`, `BranchId`, and academic year.
+- Manual SQL script folders and a `SchemaVersions` runner exist.
+- Academic structures, global boards/universities, syllabus templates, subscription entities, RBAC entities, and dynamic frontend menus have been started.
+- Some isolation tests and database script tests exist.
+
+The implementation is only partially complete:
+
+- `Client` is still partly modeled as a school, not a Trust or education group.
+- `Branch` is treated as institution in some places, while "branch" is also used for college academic branch in DTOs and UI.
+- School class/section assumptions still exist in exams, fees, timetable, syllabus, docs, routes, and frontend labels.
+- Subscription business logic exists, but RBAC and billing-route protection are not enterprise-safe.
+- Global masters and syllabus templates are seeded with demo-scale data, not production-grade Indian coverage.
+- Frontend pages exist for several concepts but many are partial, school-labeled, mock-backed, or not aligned with backend APIs.
+
+The highest risks are:
+
+- Critical security exposure through hardcoded secrets and credentials in environment files.
+- High tenant and branch isolation risk from nullable branch filters and client/branch headers controlled by frontend storage.
+- High subscription-administration risk because sensitive subscription actions are only `[Authorize]`, not permission-gated.
+- High schema discipline risk because startup seed code performs dynamic schema mutation despite the stated manual-SQL-only process.
+- High academic-model risk because school, college, and coaching structures are mixed using overloaded IDs and MVP mappings.
+
+Verdict: freeze new feature work until Phase 0 and Phase 1 stabilization are complete. Continue from the current codebase only after fixing the highest-risk architecture gaps.
+
+## Demo-Only Implementation Signals
+
+The following parts look impressive in reports or UI but are not production-grade:
+
+- `api/Persistence/Seeders/CollegeAcademicSeeder.cs` explicitly states: "Treat Semesters as 'Classes' for student enrollment in this MVP mapping" and "Treat batches as sections". That is a demo workaround, not an enterprise academic model.
+- `api/Persistence/Seeders/GlobalMasterSeeder.cs` seeds only a very small subset of Indian boards, universities, classes, and subjects.
+- `web/src/pages/school/admin/SubscriptionDashboard.tsx` shows hardcoded billing history instead of real renewal/payment data.
+- `web/src/pages/superadmin/Subscriptions.tsx` calls `/api/subscriptions/all`, but the backend exposes no matching endpoint in `SubscriptionsController`.
+- `web/src/pages/superadmin/SyllabusTemplates.tsx` appears to assume missing master APIs and has no clear production-ready backend template-management surface.
+- `api/Persistence/DatabaseSeeder.cs` contains demo reset behavior, preserved demo emails, and startup DDL patching.
+
+## B. Evidence-Based Findings
+
+| Risk | Area | Evidence | What was found | Why it matters |
+|---|---|---|---|---|
+| Critical | Security | `api/appsettings.json`, `api/appsettings.Development.json`, `api/appsettings.Production.json`, `api/appsettings.Uat.json` | JWT secret keys, database password, superadmin password, SendGrid key, and MailGun key are present in config files. | Production secrets in source/config are a direct compromise risk. |
+| Critical | Academic model | `api/Modules/Academics/Entities/Syllabus.cs`; `api/Modules/Academics/Services/SyllabusService.cs` | `BranchId` is physical branch for tenancy, while service/DTO logic also uses `BranchId` as college academic branch. `AcademicBranchId` also exists. | This creates branch-isolation ambiguity and can corrupt or leak syllabus/timetable data. |
+| High | Subscription RBAC | `api/Modules/Subscriptions/Controllers/SubscriptionsController.cs` | Plan creation, trial start, activation, renewal, freeze, unfreeze, client subscription lookup, and history endpoints are class-level `[Authorize]` only. | Any authenticated user may be able to perform billing/admin actions by GUID if routes are reachable. |
+| High | Branch isolation | `api/Persistence/ApplicationDbContext.cs`, `ApplyBranchFilter` | Branch filter allows `entity.BranchId == CurrentBranchId OR CurrentBranchId == null OR entity.BranchId == null`. | Null branch records are visible to branch users. Trust users with null branch see all branch data under client. This must be intentional per entity, not global. |
+| High | Tenant/branch headers | `web/src/services/api.ts`; `api/Core/Services/UserContextService.cs` | Frontend sends `X-Client-Id` and `X-Branch-Id` from local storage; server accepts branch context through user context/header flow. | If branch assignment is not strictly validated server-side for every request, this is an IDOR vector. |
+| High | Database discipline | `api/Persistence/DatabaseSeeder.cs` | Startup seeder dynamically runs `ALTER TABLE` to add `DisplayOrder` and `IsDeleted` across tables. | This bypasses manual SQL review, creates uncontrolled production schema mutation, and hides script drift. |
+| High | Database discipline | `api/Persistence/DatabaseSeeder.cs`, `ResetAndSeedAsync` | Calls `db.Database.MigrateAsync()` despite the documented manual-SQL-only policy. | This contradicts architecture rules and can execute unreviewed EF migrations if any appear. |
+| High | Schema/entity drift | `api/database/scripts/schema/007_branch_academic_configuration.sql`; `api/Modules/Academics/Entities/Syllabus.cs` | SQL adds `TemplateId` to `Syllabuses`, but the C# `Syllabus` entity has no `TemplateId` property. | Runtime queries, inserts, and reporting can diverge from actual schema. |
+| High | Exams | `api/Modules/Exams/Entities/ExamSchedule.cs` | `ClassRoomId` is required even though college/coaching fields exist. | College, coaching, semester, and batch exam schedules remain school-classroom constrained. |
+| High | Subscription freeze | `api/Core/Filters/RequireActiveBranchSubscriptionFilter.cs`; `api/Modules/Subscriptions/Controllers/SubscriptionsController.cs` | Global subscription filter blocks frozen/expired branches, but billing endpoints are not clearly marked with `AllowExpiredSubscriptionAttribute`. | A frozen branch may be blocked from payment/renewal APIs, while privileged admin APIs remain insufficiently permission-gated. |
+| High | Subscription correctness | `api/Modules/Subscriptions/Services/SubscriptionService.cs`, `ActivateSubscriptionAsync` | The method sets subscription status to `Active` before recording the event old status. | Audit log records wrong state transitions, weakening billing/legal traceability. |
+| High | Frontend subscription | `web/src/pages/superadmin/Subscriptions.tsx`; `api/Modules/Subscriptions/Controllers/SubscriptionsController.cs` | Frontend calls `/api/subscriptions/all`; backend controller has no matching `all` endpoint. | SuperAdmin subscription dashboard is not fully integrated. |
+| High | RBAC frontend | `web/src/App.tsx`; `web/src/components/layout/Sidebar.tsx` | Routes are mostly split by SuperAdmin vs non-SuperAdmin; menu visibility is dynamic, but direct route access is not obviously permission-guarded per feature. | UI hiding is not enough. Unauthorized users may reach pages by URL unless page/API permissions block them. |
+| Medium | Client model | `api/Core/Entities/Client.cs` | `Client` has `TrustName`, but also school-specific `SchoolCode`, `Board`, and `AffiliationNumber`. | Trust-level and institution-level data are mixed, limiting multi-institution realism. |
+| Medium | Institution types | `api/Core/Enums/InstitutionType.cs` | Only `School`, `College`, and `CoachingClass` exist. | Medical, pharmacy, engineering, ITI, nursing, diploma, training center, and custom institution types need richer classification. |
+| Medium | Academic structures | `api/Modules/Academics/Entities/AcademicStructure.cs`; `api/Modules/Academics/Enums/AcademicType.cs` | Generic hierarchy supports only `Course`, `Branch`, `Semester`, `Batch`. | Year-based, department-based, stream-based, term-based, CBCS, and custom structures are not explicitly modeled. |
+| Medium | Subjects | `api/Modules/Academics/Entities/Subject.cs` | Subjects have credits/elective fields, but no global catalog, academic level, department/program mapping, versioning, or syllabus-source metadata. | CBCS and university-affiliated subject management will become brittle. |
+| Medium | Syllabus architecture | `api/Core/Entities/SyllabusTemplates.cs` | Templates include Board/University/Class/Subject/Version/SourceUrl, but no effective academic year, verification flag, deprecation state, branch import copy, or override model. | Production syllabus management needs traceability, versioning, and institution customization. |
+| Medium | Seed quality | `api/Persistence/Seeders/GlobalMasterSeeder.cs` | Seeds 8 boards, 2 universities, very few classes and subjects. | Demo seed data does not support real Indian education operations. |
+| Medium | Coaching model | `api/Persistence/Seeders/InstituteAcademicSeeder.cs` | Seeds JEE/NEET and a few subjects/batches. | Package-based fees, multiple course bundles, admissions cycles, and training course variants are missing. |
+| Medium | Fee model | `api/Modules/Fees/Entities/FeeStructure.cs`; `web/src/pages/school/admin/FeeStructures.tsx` | Fee structure supports class or academic structure, but coaching packages, course plans, overage, concessions, and multi-cycle plans are incomplete. Frontend uses `Guid.Empty` sentinel values. | Fees are central to ERP; sentinel IDs and school-centric models are risky. |
+| Medium | Timetable | `api/Modules/Academics/Services/TimeTableService.cs`; `web/src/pages/school/admin/TimeTable.tsx` | Some college fields exist, but school labels and branch naming ambiguity remain. | Timetable correctness depends on clean academic hierarchy and branch isolation. |
+| Medium | API docs | `api/API_DOCUMENTATION.md` | Documentation describes client as school and APIs around classes, sections, classrooms, and fee structures by class. | Docs do not describe Trust/institution enterprise model. |
+| Medium | Manual SQL runner | `api/Core/Services/DatabaseMigrationService.cs` | `SchemaVersions` runner exists but skips by script name; already-applied checksum drift is not clearly rejected. | Edited historical scripts may go undetected. |
+| Medium | CORS/JWT/password | `api/Program.cs` | CORS allows any origin, JWT HTTPS metadata is false, access token expiry is 43200 minutes, password policy minimum length is 6. | Defaults are unsuitable for production SaaS. |
+| Medium | OTP | `api/Modules/Identity/Services/AuthService.cs` | OTP generation uses `Random()`. | Security-sensitive OTPs should use cryptographic randomness. |
+| Medium | Performance | `api/Modules/Academics/Services/SyllabusService.cs` | Progress enrichment performs per-group queries and counts. | Syllabus trees and progress reporting can become slow at scale. |
+| Medium | Performance | `api/Core/Services/ExportService.cs`; multiple services | Large unpaged reads and export page size of 10000 appear. | Large Trusts with lakhs of records need strict paging, streaming, and reporting strategy. |
+| Medium | Frontend terminology | `web/src/context/AuthContext.tsx`; `web/src/components/layout/Sidebar.tsx`; routes under `web/src/pages/school` | UI still stores `schoolName`, routes under `school`, and labels use School Admin. | Enterprise buyers will see a school-only product, not a Trust/institution ERP. |
+| Low | Global masters reads | `api/Modules/Academics/Controllers/GlobalMastersController.cs` | GET endpoints are not permission-specific, relying on fallback auth. | Usually acceptable for global masters, but should be explicitly designed and documented. |
+
+## C. Enterprise Readiness Scorecard
+
+| Area | Score | Assessment |
+|---|---:|---|
+| Multi-tenancy | 5/10 | Client filters exist, but client model and header/context validation need hardening. |
+| Branch/institution isolation | 4/10 | Branch entity exists, but nullable branch filters and overloaded branch terms are risky. |
+| Academic flexibility | 4/10 | Generic structures started, but school assumptions and MVP college mappings remain. |
+| Syllabus architecture | 2.5/10 | Templates started, but versioning/import/override/verification model is incomplete. |
+| Seeding quality | 3/10 | Seeds are useful demos, not production Indian coverage. |
+| Subscription system | 4/10 | Core entities/services exist, but RBAC, freeze behavior, audit accuracy, and UI integration are incomplete. |
+| RBAC | 5/10 | Permissions exist, but enforcement is inconsistent across controllers and frontend routes. |
+| Frontend completeness | 4/10 | Many pages exist, but terminology, route guards, API alignment, and mock data remain. |
+| Database script discipline | 4/10 | Script runner exists, but startup DDL mutation and schema/entity drift are serious. |
+| Performance readiness | 3/10 | Pagination exists in places, but reporting/export/progress paths are not scale-ready. |
+| Security readiness | 2/10 | Hardcoded secrets, weak production defaults, long tokens, broad CORS, and route authorization gaps. |
+| Testing readiness | 3/10 | Some useful tests exist, but high-risk flows lack coverage. |
+| Documentation readiness | 2/10 | Docs are school-centric and do not describe enterprise Trust/institution operations. |
+
+Overall score: 3.6/10.
+
+## D. Missing Implementation List
+
+| Area | Missing item | Current evidence | Business impact | Technical risk | Recommended fix | Priority |
+|---|---|---|---|---|---|---|
+| Security | Remove committed secrets and rotate credentials | `api/appsettings*.json` contain secrets | Cannot pass enterprise security review | Critical compromise risk | Move secrets to environment/secret manager; rotate all exposed values | P0 |
+| Tenant isolation | Server-side branch assignment validation | `web/src/services/api.ts` sends branch/client headers from localStorage | User may access another branch by changing local storage | IDOR | Validate requested branch belongs to authenticated user/client before context is set | P0 |
+| Branch model | Separate physical institution ID from academic branch ID | `Syllabus`, `TimeTable`, services use `BranchId` ambiguously | Wrong data under multi-branch Trusts | Data leakage/corruption | Rename physical branch to `InstitutionId` conceptually; use `AcademicBranchId` for course branch | P0 |
+| Subscription | Permission-gate billing admin endpoints | `SubscriptionsController` only `[Authorize]` | Institute staff could freeze/activate/renew | Authorization bypass | Add permission attributes and client/branch checks | P0 |
+| Database | Stop runtime schema mutation | `DatabaseSeeder` executes dynamic `ALTER TABLE` | Production schema changes can occur unexpectedly | Drift and outage risk | Move all schema changes to versioned SQL scripts | P0 |
+| Database | Resolve SQL/entity mismatch | SQL adds `Syllabuses.TemplateId`; entity lacks property | Data inaccessible/inconsistent | Runtime drift | Add entity property or remove column through script after decision | P0 |
+| Academic model | Trust/institution/program/course model | Client/Branch plus `AcademicStructure` only | Cannot reliably sell to mixed Trusts | Model debt | Add explicit `Institution`, `AcademicProgram`, `Course`, `Department/Stream`, `Term` model | P1 |
+| Exams | Non-school exam schedules | `ExamSchedule.ClassRoomId` required | Colleges/coaching cannot schedule correctly | Schema constraint bug | Make exam target polymorphic/academic-context based | P1 |
+| Syllabus | Syllabus version/import/override | Template lacks effective year/import copy/override | Cannot manage board/university changes safely | Data lineage loss | Add `SyllabusVersion`, `InstitutionSyllabusPlan`, `SyllabusOverride` | P1 |
+| Seeds | Production-grade global masters | `GlobalMasterSeeder` has tiny demo set | Customers need Indian coverage | Incorrect setup defaults | Add idempotent master packs with source/version metadata | P2 |
+| Frontend | Trust/institution selector | Sidebar branch selector commented out | Trust Admin cannot operate across institutions cleanly | Mis-scoped UI | Build validated institution switcher with backend membership | P1 |
+| Frontend | Subscription dashboard integration | Mock history, missing `/all` endpoint | Billing operations not trustworthy | Incomplete workflows | Align backend endpoints and UI by role | P1 |
+| RBAC | Per-route frontend guards | `App.tsx` broad protected route surface | Unauthorized screens visible by URL | UX/security gap | Add route permission metadata and AccessGuard enforcement | P1 |
+| Testing | Tenant/branch IDOR tests | Some isolation tests exist, but branch header tampering tests are missing | High risk before deployment | Regression risk | Add integration tests for forged client/branch headers | P0 |
+| Docs | Enterprise architecture docs | Existing docs are school-centric | Onboarding and audits fail | Misimplementation risk | Publish Trust/institution academic model and DB process docs | P1 |
+
+## E. Ideal Target Architecture
+
+The target model should preserve a simple modular monolith but remove overloaded concepts.
+
+- `Trust`: legal/customer organization. Existing `Client` can evolve into this.
+- `Institution`: one school, college, coaching center, training center, medical college, pharmacy college, engineering college, or campus. Existing `Branch` can evolve into this.
+- `InstitutionType`: broad category such as School, DegreeCollege, EngineeringCollege, PharmacyCollege, MedicalCollege, NursingCollege, Polytechnic, ITI, CoachingInstitute, TrainingCenter, Custom.
+- `AffiliationBody`: generic authority such as Board, University, Council, Skill body, or custom body.
+- `Board`: school authority such as Maharashtra Board, CBSE, ICSE/CISCE, IB, Cambridge.
+- `University`: university authority for affiliated colleges.
+- `AcademicProgram`: institution offering such as B.Sc, B.Com, B.E., B.Pharm, MBBS, NEET Repeaters, JEE Foundation, Spoken English.
+- `Course`: course/degree/package under a program.
+- `Stream`: school or college stream such as Science, Commerce, Arts.
+- `Department`: academic department such as Computer Engineering, Pharmacy, Anatomy.
+- `AcademicBranch`: engineering/college branch such as CSE, Mechanical.
+- `Batch`: operational cohort such as 2026-2030, FYJC 2026, JEE 2027 Morning.
+- `Term`: generic period with type Year, Semester, Trimester, Quarter, Module, Custom.
+- `Class`: school class/standard only.
+- `Section`: school/coaching section/division only.
+- `Subject`: global or institution-specific subject catalog entry.
+- `SubjectOffering`: subject offered in a concrete academic context and academic year.
+- `SyllabusTemplate`: global authoritative template.
+- `SyllabusVersion`: board/university/course version with effective year, source, verification, and deprecation.
+- `InstitutionSyllabusPlan`: institution-level imported copy/plan for a year/term/program.
+- `SyllabusOverride`: institution customizations without mutating global templates.
+- `FeePlan`: school class fee, college semester fee, coaching package fee, hostel/transport/add-on fee.
+- `SubscriptionPlan`: SaaS billing plan at institution/client level.
+
+Critical naming rule: physical institution/campus must not be called the same thing as college academic branch. Use `InstitutionId` or keep `BranchId` only if the product language clearly defines Branch as physical institution. Use `AcademicBranchId` for CSE/Mechanical/etc.
+
+## F. Database Plan Summary
+
+Detailed database plan is in `DATABASE_SCRIPT_PLAN.md`.
+
+Immediate database actions:
+
+- Remove all runtime schema mutation from startup seeders.
+- Add versioned manual SQL for every missing entity property and every removed/renamed column.
+- Resolve `Syllabuses.TemplateId` schema/entity drift.
+- Add unique and foreign-key constraints for global masters, academic structures, subscription histories, and role permissions.
+- Add tenant/branch indexes for all high-volume tables.
+- Add branch-membership validation tables if not already sufficient.
+- Add script checksum enforcement in `SchemaVersions`.
+
+## G. Backend Plan Summary
+
+Backend modules to add or modify:
+
+- Identity/Tenant Context: validate `ClientId` and `BranchId` against authenticated assignments.
+- Clients/Branches: evolve terminology to Trust/Institution without breaking existing APIs.
+- Academics: add explicit program/course/department/stream/term/subject-offering model.
+- Syllabus: add version/import/override services and APIs.
+- Exams/Timetable/Fees: replace class-only assumptions with academic context targeting.
+- Subscriptions: add strict permissions, billing-safe freeze flows, renewal/payment history, overage jobs.
+- RBAC: add permission keys for Trust Admin, Institution Admin, Academic Admin, Billing Admin, and SuperAdmin billing operations.
+- Background jobs: subscription expiry/grace/overage snapshots, audit-log compaction, report pre-aggregation.
+- Caching: global masters, permission maps, institution context, academic setup.
+
+## H. Frontend Plan Summary
+
+Frontend modules to add or modify:
+
+- Rename user-facing "school" language to Trust/Institution where appropriate.
+- Add validated Trust/Institution selector with role-aware scope.
+- Add Academic Setup Wizard for school, college, coaching, and custom models.
+- Build board/university/affiliation setup pages backed by real APIs.
+- Build syllabus import, version compare, customization, and approval UI.
+- Complete subscription screens for SuperAdmin, Trust Admin, and Institution Admin.
+- Add permission-aware route guards, not just menu hiding.
+- Add enterprise dashboard views for Trust-level and institution-level metrics.
+
+## I. Testing Plan Summary
+
+Detailed testing plan is in `TESTING_ROADMAP.md`.
+
+Highest-priority tests:
+
+- Forged `X-Client-Id` and `X-Branch-Id` integration tests.
+- Subscription endpoint authorization tests.
+- Frozen/expired branch billing-access tests.
+- Syllabus branch/academic-branch mapping tests.
+- Manual SQL script idempotency and schema/entity drift tests.
+- Frontend direct-route RBAC tests.
+- Secret/config validation in CI.
+
+## J. Phased Implementation Roadmap
+
+Full roadmap is in `MISSING_IMPLEMENTATION_PLAN.md`.
+
+Recommended phases:
+
+1. Phase 0: Stop-risk audit and stabilization.
+2. Phase 1: Fix tenant/branch isolation gaps.
+3. Phase 2: Fix academic structure model.
+4. Phase 3: Fix board/university/syllabus architecture.
+5. Phase 4: Fix subscription and billing.
+6. Phase 5: Enterprise frontend completion.
+7. Phase 6: Performance/security hardening.
+8. Phase 7: Production deployment readiness.
+
+## K. Final Recommendation
+
+Continue from the current implementation, but do not continue normal feature development yet.
+
+The codebase has enough useful foundation to refactor forward instead of restarting. However, tenant/branch isolation, subscription authorization, schema discipline, academic modeling, and security configuration must be stabilized before any real Trust pilot.
+
+Freeze feature development until at least these are done:
+
+- Secrets removed and rotated.
+- Subscription admin endpoints permission-gated.
+- Runtime schema mutation removed.
+- `BranchId` ambiguity resolved in academics.
+- SQL/entity drift fixed.
+- Forged tenant/branch header tests passing.
+- Frontend direct-route RBAC checks implemented for high-risk pages.
+
+Before selling to a real Trust, complete Phases 0 through 4 at minimum, and run a controlled pilot only after tenant isolation, subscription lockout/payment, academic setup, RBAC, and database-script discipline are verified by tests.
