@@ -8,6 +8,12 @@ The product must support a **Trust / Education Group / Organization** that manag
 
 The ERP should help the organization manage students, admissions, academics, attendance, fees, staff, payroll, exams, reports, communication, subscriptions, and compliance from one centralized system.
 
+The product has three user channels:
+
+- **Web Admin Portal:** Main operational portal for SuperAdmin, Trust Admin, Institution Admin, accountants, HR, academic coordinators, and office staff.
+- **Hybrid Mobile App:** Flutter-based Kaksha+ mobile app for parents, students, and teachers, with Android and iOS support.
+- **Backend API:** Shared API layer used by web and mobile apps.
+
 The product must be simple enough for a single school to use, but strong enough for a large Trust with 50+ institutions and thousands or lakhs of students.
 
 ### Simple Example
@@ -57,6 +63,8 @@ The system must support:
 | Syllabus Template | Global syllabus from board/university/source. | CBSE Class 10 Mathematics 2026 |
 | Institution Syllabus Plan | Institution copy/customization of a syllabus. | ABC High School Class 10 Math Plan |
 | Subscription Plan | SaaS billing plan for using the ERP. | Per-student yearly plan |
+| Web Admin Portal | Browser-based application for administrative and operational work. | Trust Admin dashboard |
+| Hybrid Mobile App | Android/iOS mobile app built from one shared codebase. | Kaksha+ parent/teacher app |
 
 ## 4. Product Scope
 
@@ -81,6 +89,8 @@ The ERP must support these business areas:
 - Branch/institution-level SaaS subscription management.
 - Reports and dashboards.
 - Audit logs and compliance records.
+- Web admin portal for full ERP operations.
+- Hybrid mobile app for parent, student, and teacher usage.
 
 ### 4.2 Out of Scope For First Enterprise Release
 
@@ -91,9 +101,106 @@ These may be added later unless specifically approved:
 - Advanced LMS content authoring.
 - AI-based student performance prediction.
 - Marketplace integrations.
-- Native mobile apps, unless web app is not sufficient.
+- Full offline ERP operation without internet.
+- Separate native Android and iOS apps with different codebases.
 
-## 5. Stakeholders
+## 5. Product Channels
+
+The ERP must be available through web and mobile channels. Both channels must use the same backend API and must follow the same Trust, institution, role, and permission rules.
+
+### 5.1 Web Admin Portal
+
+The web portal is the primary application for administration and management.
+
+Expected web users:
+
+- SuperAdmin.
+- Trust Admin.
+- Institution Admin.
+- Principal / Director.
+- Academic Coordinator.
+- Accountant.
+- HR.
+- Receptionist.
+- Librarian.
+- Transport In-charge.
+- Hostel Warden.
+- Office staff.
+
+Typical web tasks:
+
+- Create Trusts and institutions.
+- Configure academic structures.
+- Manage admissions.
+- Configure fees.
+- Collect and reconcile fees.
+- Manage staff and payroll.
+- Create exams and publish results.
+- Manage subscriptions.
+- Generate reports.
+
+### 5.2 Hybrid Mobile App
+
+The mobile app is an active product channel. It is being developed as a Flutter hybrid app under the `school-mobile` repository and should support Android and iOS.
+
+Expected mobile users:
+
+- Parents.
+- Students.
+- Teachers.
+
+The mobile app should focus on daily, high-frequency tasks that users naturally perform on phones.
+
+Parent mobile examples:
+
+- View child profile.
+- View attendance.
+- View homework.
+- View exam results.
+- View fee status.
+- View notices.
+- View transport details.
+- View hostel details where applicable.
+
+Student mobile examples:
+
+- View timetable.
+- View attendance.
+- View homework and assignments.
+- View syllabus and study progress.
+- View exams and results.
+- Download academic documents such as admit cards or PDFs.
+
+Teacher mobile examples:
+
+- View assigned classes or batches.
+- Mark attendance.
+- Add homework.
+- View exam schedules.
+- Enter marks where allowed.
+- View result sheets.
+- Access student lists.
+
+### 5.3 Channel Responsibility
+
+| Feature Area | Web Portal | Mobile App |
+|---|---|---|
+| Trust and institution setup | Primary | Not required initially |
+| Subscription management | Primary | View-only or billing alert if needed |
+| Admissions | Primary | Optional inquiry/follow-up later |
+| Student profile | Full management | View own/child profile |
+| Attendance | Full management and reports | Teacher marking, parent/student viewing |
+| Fees | Full setup and collection | Parent/student fee status and payment later |
+| Homework | Full oversight | Teacher creation, student/parent viewing |
+| Exams | Full setup and publishing | Teacher marks entry, student/parent viewing |
+| Notices | Full creation | Viewing and notifications |
+| Transport | Full setup | Student/parent route/allocation view |
+| Hostel | Full setup | Student/parent hostel details view |
+| Reports | Full reports | Simple summaries only |
+
+Mobile must not bypass backend permissions. If the backend does not allow an action for a role, the mobile app must also block it.
+
+## 6. Stakeholders
 
 | Stakeholder | What They Need |
 |---|---|
@@ -104,8 +211,8 @@ These may be added later unless specifically approved:
 | Principal / Director | Academic oversight, reports, staff monitoring, student performance. |
 | Academic Coordinator | Timetable, subjects, syllabus, exams, teacher allocation. |
 | Teacher / Faculty | Attendance, homework, syllabus progress, marks entry, communication. |
-| Student | Timetable, attendance, fees, exams, results, homework, notices. |
-| Parent / Guardian | Child progress, attendance, fees, communication, notices. |
+| Student | Mobile-first access to timetable, attendance, fees, exams, results, homework, syllabus, notices, and documents. |
+| Parent / Guardian | Mobile-first access to child's progress, attendance, fees, communication, transport, hostel, notices, and results. |
 | Accountant | Fee setup, collection, concessions, receipts, dues, finance reports. |
 | HR | Staff profile, attendance, leave, payroll. |
 | Receptionist / Front Office | Inquiries, follow-ups, visitors, calls, postal records. |
@@ -114,11 +221,11 @@ These may be added later unless specifically approved:
 | Hostel Warden | Hostel rooms, allocation, attendance, complaints. |
 | Support Staff | Assigned operational tasks based on permissions. |
 
-## 6. Institution Types To Support
+## 7. Institution Types To Support
 
 The ERP must not assume that every institution is a school.
 
-### 6.1 Schools
+### 7.1 Schools
 
 Must support:
 
@@ -141,7 +248,7 @@ Class: 10
 Section: A  
 Subjects: Mathematics, Science, English, Marathi, History  
 
-### 6.2 Colleges
+### 7.2 Colleges
 
 Must support:
 
@@ -174,7 +281,7 @@ Term: Semester 5
 Subject: Database Management Systems  
 Credits: 4  
 
-### 6.3 Coaching And Training Institutes
+### 7.3 Coaching And Training Institutes
 
 Must support:
 
@@ -196,11 +303,11 @@ Batch: Morning Batch
 Module: Physics Mechanics  
 Fee Plan: One-year package with installments  
 
-## 7. Multi-Tenant Business Model
+## 8. Multi-Tenant Business Model
 
 The platform is a SaaS product.
 
-### 7.1 Trust-Level Isolation
+### 8.1 Trust-Level Isolation
 
 Data of one Trust must never be visible to another Trust.
 
@@ -208,7 +315,7 @@ Example:
 
 ABC Education Trust and XYZ Education Society are separate customers. ABC users must never see XYZ students, staff, fees, reports, or settings.
 
-### 7.2 Institution-Level Isolation
+### 8.2 Institution-Level Isolation
 
 Within the same Trust, an institution user should see only their assigned institution unless their role allows more.
 
@@ -222,7 +329,7 @@ ABC Trust has three institutions:
 
 The Engineering College admin must not see High School fee records. A Trust Admin may see all three institutions.
 
-### 7.3 Role-Based Scope
+### 8.3 Role-Based Scope
 
 | Role | Scope |
 |---|---|
@@ -234,11 +341,11 @@ The Engineering College admin must not see High School fee records. A Trust Admi
 | Parent | Own children only. |
 | Student | Own profile only. |
 
-## 8. User Roles And Permissions
+## 9. User Roles And Permissions
 
 The ERP must use role-based access control. A role decides what a user can view, create, edit, approve, export, or delete.
 
-### 8.1 Standard Roles
+### 9.1 Standard Roles
 
 - SuperAdmin.
 - Trust Admin.
@@ -255,7 +362,7 @@ The ERP must use role-based access control. A role decides what a user can view,
 - Student.
 - Parent.
 
-### 8.2 Permission Examples
+### 9.2 Permission Examples
 
 | Permission | Who Usually Gets It |
 |---|---|
@@ -272,9 +379,9 @@ The ERP must use role-based access control. A role decides what a user can view,
 | Manage Subscription Plans | SuperAdmin |
 | Renew Institution Subscription | SuperAdmin, Trust Admin, authorized billing user |
 
-## 9. Core Functional Requirements
+## 10. Core Functional Requirements
 
-### 9.1 Trust And Institution Management
+### 10.1 Trust And Institution Management
 
 The system shall allow SuperAdmin to:
 
@@ -290,7 +397,7 @@ The system shall allow Trust Admin to:
 - Compare admissions, fees, staff, attendance, and results across institutions.
 - Manage users across institutions, based on permission.
 
-### 9.2 Academic Setup
+### 10.2 Academic Setup
 
 The system shall support academic setup based on institution type.
 
@@ -325,7 +432,7 @@ For coaching/training:
 - Session schedule.
 - Subject/faculty mapping.
 
-### 9.3 Admissions
+### 10.3 Admissions
 
 The system shall support:
 
@@ -342,7 +449,7 @@ Example:
 
 A parent visits ABC High School. The receptionist records an inquiry for Class 8. After follow-up and document verification, the admin approves the admission, assigns Class 8-A, and the system creates fee dues.
 
-### 9.4 Student Information System
+### 10.4 Student Information System
 
 The system shall maintain:
 
@@ -356,7 +463,7 @@ The system shall maintain:
 - Exam results.
 - Transfer/leaving records.
 
-### 9.5 Staff And HR
+### 10.5 Staff And HR
 
 The system shall manage:
 
@@ -368,7 +475,7 @@ The system shall manage:
 - Payroll inputs.
 - Role and permission assignment.
 
-### 9.6 Attendance
+### 10.6 Attendance
 
 The system shall support:
 
@@ -385,7 +492,7 @@ Example:
 
 A teacher marks Class 10-A attendance. A college faculty marks attendance for Semester 5 Database Management Systems. A coaching faculty marks attendance for the NEET Morning Batch.
 
-### 9.7 Timetable
+### 10.7 Timetable
 
 The system shall support timetable creation for:
 
@@ -397,7 +504,7 @@ The system shall support timetable creation for:
 
 The system should prevent obvious conflicts, such as assigning the same teacher to two sessions at the same time.
 
-### 9.8 Syllabus And Teaching Progress
+### 10.8 Syllabus And Teaching Progress
 
 The system shall support:
 
@@ -418,7 +525,7 @@ Example:
 
 CBSE Class 10 Mathematics 2026 syllabus is stored as a global template. ABC High School imports it for Academic Year 2026-27. A teacher tracks completed chapters during the year.
 
-### 9.9 Fee Management And Finance
+### 10.9 Fee Management And Finance
 
 The system shall support:
 
@@ -440,7 +547,7 @@ Example:
 
 A school may charge annual tuition plus term fees. A college may charge semester fees. A coaching center may charge a JEE package fee in three installments.
 
-### 9.10 Exams And Results
+### 10.10 Exams And Results
 
 The system shall support:
 
@@ -457,7 +564,7 @@ The system shall support:
 
 For colleges, exams must support semester/year and credit-based results where required.
 
-### 9.11 Communication
+### 10.11 Communication
 
 The system shall support:
 
@@ -471,7 +578,7 @@ The system shall support:
 - Admission follow-ups.
 - Attendance alerts.
 
-### 9.12 Front Office
+### 10.12 Front Office
 
 The system shall support:
 
@@ -481,7 +588,7 @@ The system shall support:
 - Postal records.
 - Follow-up reminders.
 
-### 9.13 Library
+### 10.13 Library
 
 The system shall support:
 
@@ -492,7 +599,7 @@ The system shall support:
 - Fines.
 - Reports.
 
-### 9.14 Transport
+### 10.14 Transport
 
 The system shall support:
 
@@ -504,7 +611,7 @@ The system shall support:
 - Maintenance records.
 - Fuel logs.
 
-### 9.15 Hostel
+### 10.15 Hostel
 
 The system shall support:
 
@@ -515,7 +622,7 @@ The system shall support:
 - Complaints.
 - Swap/change requests.
 
-### 9.16 Inventory And Assets
+### 10.16 Inventory And Assets
 
 The system shall support:
 
@@ -526,7 +633,7 @@ The system shall support:
 - Asset tracking.
 - Purchase and usage history.
 
-### 9.17 Subscription And Billing
+### 10.17 Subscription And Billing
 
 The system shall support institution-level SaaS subscription.
 
@@ -551,9 +658,59 @@ Example:
 
 ABC Trust has five institutions. Each institution may have a separate subscription. If ABC Coaching Center is frozen due to non-payment, ABC High School should continue working if its subscription is active.
 
-## 10. Key Workflows
+### 10.18 Mobile App
 
-### 10.1 Trust Onboarding Workflow
+The system shall provide a hybrid mobile app for parents, students, and teachers.
+
+The mobile app shall support:
+
+- Login and secure session handling.
+- Role-based home screen.
+- Parent/student dashboard.
+- Teacher dashboard.
+- Student selection for parents with multiple children.
+- Attendance viewing.
+- Teacher attendance marking where permitted.
+- Homework viewing and teacher homework creation where permitted.
+- Exam schedule and results viewing.
+- Teacher marks entry where permitted.
+- Syllabus viewing.
+- Notice board.
+- Fee status viewing.
+- Transport allocation viewing.
+- Hostel information viewing.
+- Profile and settings.
+- Document/PDF viewing where applicable.
+- Basic offline cache for read-heavy data, where safe.
+- Clear handling of no internet, loading, empty, and error states.
+
+The mobile app shall not initially be the primary tool for:
+
+- Trust creation.
+- Institution setup.
+- Full fee configuration.
+- Full subscription administration.
+- Deep reports.
+- Role and permission management.
+
+Those remain web-first workflows.
+
+### 10.19 Mobile Privacy And Device Permissions
+
+The mobile app may request device permissions only when needed for a user-facing feature.
+
+Examples:
+
+- Storage permission for downloading documents.
+- Camera/photos permission for profile images or assignment submission.
+- Notification permission for alerts.
+- Location permission only for approved transport-related features.
+
+The app must explain why a permission is needed and must continue to work in a limited way if a non-essential permission is denied.
+
+## 11. Key Workflows
+
+### 11.1 Trust Onboarding Workflow
 
 1. SuperAdmin creates a Trust.
 2. SuperAdmin creates institutions under the Trust.
@@ -561,7 +718,7 @@ ABC Trust has five institutions. Each institution may have a separate subscripti
 4. Trust Admin user is created.
 5. Trust Admin completes institution setup.
 
-### 10.2 Institution Setup Workflow
+### 11.2 Institution Setup Workflow
 
 1. Institution Admin selects institution type.
 2. System shows setup options based on institution type.
@@ -571,7 +728,7 @@ ABC Trust has five institutions. Each institution may have a separate subscripti
 6. Admin maps subjects and staff.
 7. Institution becomes ready for admissions and operations.
 
-### 10.3 Student Admission Workflow
+### 11.3 Student Admission Workflow
 
 1. Inquiry is recorded.
 2. Follow-up is completed.
@@ -582,7 +739,7 @@ ABC Trust has five institutions. Each institution may have a separate subscripti
 7. Fee plan is allocated.
 8. Student/parent login is created.
 
-### 10.4 Fee Collection Workflow
+### 11.4 Fee Collection Workflow
 
 1. Fee plan is configured.
 2. System generates dues.
@@ -591,7 +748,7 @@ ABC Trust has five institutions. Each institution may have a separate subscripti
 5. Ledger is updated.
 6. Dues report reflects updated balance.
 
-### 10.5 Syllabus Workflow
+### 11.5 Syllabus Workflow
 
 1. SuperAdmin or authorized academic admin creates global syllabus template.
 2. Template is versioned with source and effective year.
@@ -600,7 +757,7 @@ ABC Trust has five institutions. Each institution may have a separate subscripti
 5. Teacher tracks progress by topic.
 6. Principal/academic coordinator reviews completion.
 
-### 10.6 Subscription Freeze Workflow
+### 11.6 Subscription Freeze Workflow
 
 1. Institution subscription expires.
 2. Grace period starts, if configured.
@@ -610,9 +767,24 @@ ABC Trust has five institutions. Each institution may have a separate subscripti
 6. Payment is recorded.
 7. Institution access is restored.
 
-## 11. Reports And Dashboards
+### 11.7 Mobile Login And Daily Use Workflow
 
-### 11.1 SuperAdmin Dashboard
+1. Parent, student, or teacher opens the Kaksha+ mobile app.
+2. User logs in with approved credentials.
+3. App loads the user's role and institution context.
+4. Parent sees linked children and selects a child if more than one exists.
+5. Student sees personal academic information.
+6. Teacher sees assigned classes, batches, attendance, homework, and exams.
+7. App shows only the features allowed by backend permissions.
+8. If internet is unavailable, app may show safe cached information where available.
+
+Example:
+
+A parent has two children in the same Trust: one in school and one in coaching. The mobile app should allow the parent to select the child and then view only that child's attendance, fees, homework, notices, and results.
+
+## 12. Reports And Dashboards
+
+### 12.1 SuperAdmin Dashboard
 
 Must show:
 
@@ -623,7 +795,7 @@ Must show:
 - Institution usage.
 - Pending renewals.
 
-### 11.2 Trust Admin Dashboard
+### 12.2 Trust Admin Dashboard
 
 Must show:
 
@@ -636,7 +808,7 @@ Must show:
 - Academic performance.
 - Subscription status per institution.
 
-### 11.3 Institution Dashboard
+### 12.3 Institution Dashboard
 
 Must show:
 
@@ -648,7 +820,7 @@ Must show:
 - Syllabus completion.
 - Alerts and notices.
 
-### 11.4 Operational Reports
+### 12.4 Operational Reports
 
 Required reports:
 
@@ -666,9 +838,9 @@ Required reports:
 - Subscription report.
 - Audit report.
 
-## 12. Non-Functional Requirements
+## 13. Non-Functional Requirements
 
-### 12.1 Security
+### 13.1 Security
 
 The system must:
 
@@ -681,7 +853,7 @@ The system must:
 - Avoid exposing secrets in source code or configuration files.
 - Log security-relevant events.
 
-### 12.2 Performance
+### 13.2 Performance
 
 The system should support:
 
@@ -693,7 +865,7 @@ The system should support:
 - Search and filters.
 - Efficient reports.
 
-### 12.3 Auditability
+### 13.3 Auditability
 
 The system must track:
 
@@ -706,7 +878,7 @@ The system must track:
 - Permission changes.
 - Important student/staff changes.
 
-### 12.4 Reliability
+### 13.4 Reliability
 
 The system should:
 
@@ -716,7 +888,7 @@ The system should:
 - Handle failures gracefully.
 - Show clear error messages to users.
 
-### 12.5 Usability
+### 13.5 Usability
 
 The product should be easy for non-technical education staff.
 
@@ -728,7 +900,23 @@ The UI should:
 - Provide clear empty states and validation messages.
 - Help users complete common tasks quickly.
 
-## 13. Data And Isolation Rules
+### 13.6 Mobile App Non-Functional Requirements
+
+The mobile app must:
+
+- Work on Android and iOS from a shared Flutter codebase.
+- Support separate development and production environments.
+- Use secure API communication.
+- Store sensitive tokens securely.
+- Avoid exposing secrets in app code or public assets.
+- Handle slow networks gracefully.
+- Show clear offline and retry messages.
+- Cache only data that is safe for the user's role.
+- Clear cached data on logout where required.
+- Respect backend tenant, institution, and role permissions.
+- Support production signing and release process for app stores.
+
+## 14. Data And Isolation Rules
 
 1. Every Trust's data must be isolated from other Trusts.
 2. Every institution's operational data must be isolated unless user role allows Trust-level view.
@@ -738,8 +926,10 @@ The UI should:
 6. Fee and subscription history must never be physically deleted during normal operations.
 7. Academic year context must be stored for year-dependent records.
 8. Reports must respect user role and institution access.
+9. Mobile cached data must also respect the same user, Trust, institution, and child/student access rules.
+10. If a mobile user logs out, switches account, or loses access to an institution, restricted cached data must not remain accessible.
 
-## 14. Manual Database Change Requirement
+## 15. Manual Database Change Requirement
 
 The product uses PostgreSQL with manual SQL scripts for schema changes.
 
@@ -753,7 +943,7 @@ Business requirement:
 
 This is important because Trust customers will depend on historical academic and financial records.
 
-## 15. Examples Of Correct Behavior
+## 16. Examples Of Correct Behavior
 
 ### Example 1: Trust Admin Access
 
@@ -803,7 +993,15 @@ Admin selects:
 
 The system shows batch/package screens and does not force board/class.
 
-## 16. Business Risks
+### Example 6: Mobile Parent Access
+
+Parent logs into the Kaksha+ mobile app and sees two children. After selecting one child, the parent can view only that child's attendance, homework, fee status, notices, transport, hostel, and results.
+
+### Example 7: Mobile Teacher Access
+
+A teacher logs into the mobile app and sees assigned classes or batches. The teacher can mark attendance and add homework only for assigned academic groups.
+
+## 17. Business Risks
 
 | Risk | Impact | Required Control |
 |---|---|---|
@@ -815,8 +1013,11 @@ The system shows batch/package screens and does not force board/class.
 | Hardcoded roles/secrets | Security and maintenance issues | Config and RBAC governance |
 | Untracked database changes | Production data risk | Manual SQL process and script tracking |
 | Missing audit logs | Disputes cannot be resolved | Audit trail for sensitive operations |
+| Mobile app bypasses web permissions | Unauthorized access from phone | Backend permission enforcement for every API |
+| Mobile cached data leaks after logout | Sensitive student data exposure | Secure storage, cache clearing, and user-scoped cache |
+| Mobile app uses school-only labels | College/coaching users get confused | Institution-type-aware mobile language |
 
-## 17. Success Criteria
+## 18. Success Criteria
 
 The product can be considered ready for a controlled paid pilot only when:
 
@@ -829,15 +1030,16 @@ The product can be considered ready for a controlled paid pilot only when:
 - Database scripts can build and update a database reliably.
 - Security risks such as hardcoded secrets and tenant leakage are resolved.
 - Critical workflows are covered by automated tests.
+- The mobile app supports at least the approved parent, student, and teacher daily workflows for the pilot institution type.
+- Mobile login, role routing, secure storage, offline/cache behavior, and API permission enforcement are tested.
+- Dev and production mobile build processes are documented and working.
 
-## 18. Future Enhancements
+## 19. Future Enhancements
 
 Future versions may include:
 
 - Alumni management.
 - Advanced LMS.
-- Parent mobile app.
-- Student mobile app.
 - AI-assisted reports.
 - Advanced analytics.
 - Government compliance integrations.
@@ -845,8 +1047,11 @@ Future versions may include:
 - WhatsApp chatbot.
 - Advanced biometric and RFID integrations.
 - Multi-language UI.
+- Advanced mobile payments.
+- Push notification automation.
+- Mobile biometric attendance for staff where approved.
 
-## 19. Final Business Direction
+## 20. Final Business Direction
 
 The product should no longer be treated as only a School ERP.
 
@@ -854,4 +1059,4 @@ The correct product direction is:
 
 **Enterprise Education ERP SaaS for Indian Trusts and multi-institution education groups.**
 
-All future implementation, UI labels, database design, role design, testing, and documentation should follow this business direction.
+All future implementation, UI labels, database design, role design, testing, documentation, web screens, and mobile screens should follow this business direction.
