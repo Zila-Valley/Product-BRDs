@@ -13,6 +13,7 @@ The test suite is not yet enterprise-ready because the highest-risk SaaS paths a
 - Syllabus import/version/customization.
 - SQL script/entity drift.
 - Frontend direct-route RBAC.
+- Mobile secure token storage, role routing, offline cache isolation, and subscription lockout.
 - Production config safety.
 - Performance at Trust/institution scale.
 
@@ -30,6 +31,9 @@ Add or extend:
 - Syllabus override merge logic.
 - Fee plan calculation for fixed, per-student, package, installment, concession, and overage cases.
 - Cryptographic OTP generator after replacing `Random()`.
+- Mobile auth state restoration and token expiry handling.
+- Mobile cache key/partition helpers.
+- Mobile 402 interceptor behavior.
 
 ## Integration Tests
 
@@ -53,6 +57,8 @@ Add or extend:
 - Fee plan creation and invoice generation for school, college, and coaching.
 - Syllabus import from global template into institution plan.
 - Institution syllabus override does not mutate global template.
+- Mobile parent/student/teacher API scope tests.
+- Mobile 402 subscription lock integration tests.
 
 ## E2E Frontend Tests
 
@@ -73,6 +79,20 @@ Add Playwright flows:
 - Student onboarding by institution type.
 - Form validation and server error display.
 - Empty states for no branches, no academic year, no subscription, no students.
+
+Mobile Flutter flows:
+
+- Parent login routes to parent dashboard.
+- Student login routes to student-safe dashboard.
+- Teacher login routes to teacher dashboard.
+- Unsupported role shows a safe no-access screen.
+- Parent with multiple children can switch child safely.
+- Child switch updates attendance, fees, homework, transport, hostel, syllabus, and exam context.
+- Teacher can mark attendance for assigned school class/section.
+- Teacher cannot mark attendance for unassigned class/batch.
+- Offline mode shows scoped cached data only for the current user.
+- Logout clears auth state and restricted cached data.
+- Frozen/expired institution shows mobile subscription lock state.
 
 ## Seeder Tests
 
@@ -119,6 +139,9 @@ Add:
 - File upload content-type, size, extension, and malware-scan policy tests.
 - Sensitive data redaction tests for logs and API errors.
 - Production config refuses unsafe defaults.
+- Mobile sensitive-log tests or static checks to prevent request/response body logging in production.
+- Mobile secure-storage tests for tokens.
+- Mobile shared-device/account-switch privacy tests.
 
 ## Performance Tests
 
@@ -140,6 +163,8 @@ Add tests for:
 - Subscription overage snapshot.
 - Export endpoints.
 - Global master cache behavior.
+- Mobile offline cache read/write under parent with multiple children.
+- Mobile dashboard startup with large notice/homework/attendance datasets.
 
 Minimum performance gates for pilot:
 
@@ -161,6 +186,19 @@ Minimum performance gates for pilot:
 | Phase 6 | Security suite and performance/load tests. |
 | Phase 7 | Deployment smoke, restore rehearsal, production config validation, pilot E2E scenario. |
 
+Mobile-specific phase gates:
+
+| Phase | Required mobile tests before completion |
+|---|---|
+| Phase 0 | Secure token storage, production logging disabled, logout/cache clearing. |
+| Phase 1 | Mobile role data scoped to assigned Trust/institution/student. |
+| Phase 2 | Teacher mobile academic-context tests for school, college, coaching. |
+| Phase 3 | Mobile syllabus list/detail scoped by selected student/context. |
+| Phase 4 | Mobile 402 lock screen and subscription-state handling. |
+| Phase 5 | Parent/student/teacher E2E flows on Android emulator and iOS simulator. |
+| Phase 6 | Mobile privacy, offline, network failure, and performance tests. |
+| Phase 7 | Signed dev/prod mobile build smoke tests. |
+
 ## Pilot Exit Criteria
 
 Do not start a paid pilot until:
@@ -172,3 +210,4 @@ Do not start a paid pilot until:
 - Manual SQL scripts can rebuild a fresh database.
 - Seeders are repeat-safe.
 - No production secrets are committed.
+- Mobile app has passed secure storage, cache isolation, role routing, and subscription lock tests.

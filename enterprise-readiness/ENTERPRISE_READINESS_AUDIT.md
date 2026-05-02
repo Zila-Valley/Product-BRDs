@@ -1,7 +1,7 @@
 # Enterprise Readiness Audit
 
 Date: 2026-05-03  
-Scope: `api/`, `web/`, database scripts, seeders, tests, and repository documentation.
+Scope: `api/`, `web/`, `school-mobile/`, database scripts, seeders, tests, and repository documentation.
 
 ## A. Executive Summary
 
@@ -23,6 +23,7 @@ The implementation is only partially complete:
 - Subscription business logic exists, but RBAC and billing-route protection are not enterprise-safe.
 - Global masters and syllabus templates are seeded with demo-scale data, not production-grade Indian coverage.
 - Frontend pages exist for several concepts but many are partial, school-labeled, mock-backed, or not aligned with backend APIs.
+- The Flutter mobile app exists as an active channel for parent, student, and teacher workflows, but it is not yet enterprise-hardened for secure storage, subscription lockout, tenant/institution context, or college/coaching terminology.
 
 The highest risks are:
 
@@ -31,6 +32,7 @@ The highest risks are:
 - High subscription-administration risk because sensitive subscription actions are only `[Authorize]`, not permission-gated.
 - High schema discipline risk because startup seed code performs dynamic schema mutation despite the stated manual-SQL-only process.
 - High academic-model risk because school, college, and coaching structures are mixed using overloaded IDs and MVP mappings.
+- High mobile security and isolation risk because the app stores access tokens in `SharedPreferences`, logs request/response bodies, and uses broad local Isar caches that are not clearly scoped by user, Trust, institution, or selected student.
 
 Verdict: freeze new feature work until Phase 0 and Phase 1 stabilization are complete. Continue from the current codebase only after fixing the highest-risk architecture gaps.
 
@@ -44,6 +46,8 @@ The following parts look impressive in reports or UI but are not production-grad
 - `web/src/pages/superadmin/Subscriptions.tsx` calls `/api/subscriptions/all`, but the backend exposes no matching endpoint in `SubscriptionsController`.
 - `web/src/pages/superadmin/SyllabusTemplates.tsx` appears to assume missing master APIs and has no clear production-ready backend template-management surface.
 - `api/Persistence/DatabaseSeeder.cs` contains demo reset behavior, preserved demo emails, and startup DDL patching.
+- `school-mobile/README.md` is still the default Flutter README, while `school-mobile/PROJECT_DNA.md` and the code show a real Flutter app. Documentation maturity does not match implementation.
+- `school-mobile/api-parent.tsv`, `api-student.tsv`, and `api-teacher.tsv` contain mojibake and partial endpoint status markers, so they are working notes rather than reliable mobile API documentation.
 
 ## B. Evidence-Based Findings
 
@@ -79,6 +83,17 @@ The following parts look impressive in reports or UI but are not production-grad
 | Medium | Performance | `api/Core/Services/ExportService.cs`; multiple services | Large unpaged reads and export page size of 10000 appear. | Large Trusts with lakhs of records need strict paging, streaming, and reporting strategy. |
 | Medium | Frontend terminology | `web/src/context/AuthContext.tsx`; `web/src/components/layout/Sidebar.tsx`; routes under `web/src/pages/school` | UI still stores `schoolName`, routes under `school`, and labels use School Admin. | Enterprise buyers will see a school-only product, not a Trust/institution ERP. |
 | Low | Global masters reads | `api/Modules/Academics/Controllers/GlobalMastersController.cs` | GET endpoints are not permission-specific, relying on fallback auth. | Usually acceptable for global masters, but should be explicitly designed and documented. |
+| High | Mobile token security | `school-mobile/lib/features/auth/presentation/providers/auth_provider.dart` | Access token is persisted in `SharedPreferences` as `access_token`; platform secure storage is not used. | Mobile tokens should be stored in OS secure storage/keychain/keystore, not plain app preferences. |
+| High | Mobile sensitive logging | `school-mobile/lib/core/network/dio_provider.dart` | Dio `LogInterceptor` logs request bodies and response bodies. | Login responses, student data, fees, and personal data may leak into device/debug logs. |
+| High | Mobile tenant/institution context | `school-mobile/lib/core/network/dio_provider.dart`; `school-mobile/lib/features/auth/data/models/user_profile.dart` | Authenticated requests add only `Authorization`; no explicit validated institution/academic-year context is sent. `UserProfile` has `branchId`, but no Trust/institution selector or assignment model. | Parent/teacher workflows across institutions may be incorrectly scoped or rely entirely on backend defaults. |
+| High | Mobile cache isolation | `school-mobile/lib/core/storage/isar_service.dart`; `school-mobile/lib/features/dashboard/presentation/providers/student_provider.dart` | Isar cache stores students, attendance, homework, transport, hostel, syllabus, exams, and notices globally; cache helpers do not include userId/clientId/institutionId partitioning. | A logout/switch-account failure or shared device can expose another user's student data. |
+| Medium | Mobile role coverage | `school-mobile/lib/features/auth/data/models/user_profile.dart`; `school-mobile/lib/features/dashboard/presentation/screens/main_navigation_controller.dart` | Mobile routes only recognize `teacher`, `parent`, and `student`. | Acceptable for current mobile scope, but Trust Admin/Institution Admin/Billing roles must be explicitly web-only or future mobile roles. |
+| Medium | Mobile academic flexibility | `school-mobile/lib/features/teacher/data/attendance_api.dart`; `school-mobile/lib/features/teacher/presentation/screens/tabs/teacher_attendance_tab.dart` | Teacher attendance is class/section based through `/api/Classes` and `/api/Sections/filter`. | Teacher mobile workflows are school-first and do not yet support college semester/batch or coaching batch attendance. |
+| Medium | Mobile API alignment | `school-mobile/lib/features/finance/data/finance_api.dart`; `school-mobile/api-parent.tsv` | Fee API calls `/api/FeeCollections` without studentId in code, while notes reference `?studentId={studentId}`. | Parent with multiple children may see wrong or unfiltered fee data unless backend scopes perfectly. |
+| Medium | Mobile subscription handling | `school-mobile/lib/core/network/dio_provider.dart` | No 402 interceptor or frozen/expired institution lock screen exists. | Mobile users may receive confusing failures during subscription freeze; billing-safe behavior is undefined. |
+| Medium | Mobile terminology | `school-mobile/lib/features/dashboard/presentation/widgets/service_grid.dart`; `school-mobile/lib/features/teacher/presentation/screens/tabs/teacher_attendance_tab.dart` | Text such as "School Services", "CLASS", "SECTION", and class/section APIs remain school-centric. | College/coaching users will see incorrect language and workflows. |
+| Medium | Mobile config/release | `school-mobile/BUILD_INSTRUCTIONS.md`; `school-mobile/pubspec.yaml`; `.env.dev`, `.env.prod` | Dev/prod flavors exist, but README is generic and production signing is a to-do; env URLs are packaged as assets. | Release governance, environment handling, and store readiness need hardening. |
+| Medium | Mobile tests | `school-mobile/integration_test/auth_flow_test.dart`; `school-mobile/test/features/**` | Tests cover some widgets/models/repositories; E2E login is only a UI presence check. | Critical mobile auth, cache clearing, role routing, offline, and permission flows are not proven. |
 
 ## C. Enterprise Readiness Scorecard
 
@@ -92,6 +107,7 @@ The following parts look impressive in reports or UI but are not production-grad
 | Subscription system | 4/10 | Core entities/services exist, but RBAC, freeze behavior, audit accuracy, and UI integration are incomplete. |
 | RBAC | 5/10 | Permissions exist, but enforcement is inconsistent across controllers and frontend routes. |
 | Frontend completeness | 4/10 | Many pages exist, but terminology, route guards, API alignment, and mock data remain. |
+| Mobile completeness | 4/10 | Flutter app has real parent/student/teacher screens, but security, cache isolation, college/coaching support, and subscription handling are incomplete. |
 | Database script discipline | 4/10 | Script runner exists, but startup DDL mutation and schema/entity drift are serious. |
 | Performance readiness | 3/10 | Pagination exists in places, but reporting/export/progress paths are not scale-ready. |
 | Security readiness | 2/10 | Hardcoded secrets, weak production defaults, long tokens, broad CORS, and route authorization gaps. |
@@ -116,6 +132,11 @@ Overall score: 3.6/10.
 | Seeds | Production-grade global masters | `GlobalMasterSeeder` has tiny demo set | Customers need Indian coverage | Incorrect setup defaults | Add idempotent master packs with source/version metadata | P2 |
 | Frontend | Trust/institution selector | Sidebar branch selector commented out | Trust Admin cannot operate across institutions cleanly | Mis-scoped UI | Build validated institution switcher with backend membership | P1 |
 | Frontend | Subscription dashboard integration | Mock history, missing `/all` endpoint | Billing operations not trustworthy | Incomplete workflows | Align backend endpoints and UI by role | P1 |
+| Mobile | Secure token storage | `SharedPreferences` stores `access_token` | Lost/stolen/shared device risk | Token compromise | Move tokens to secure storage and add refresh/expiry handling | P0 |
+| Mobile | User-scoped cache partitions | `IsarService` cache helpers are global | Wrong student data can appear after account switch | Privacy leak | Add user/client/institution/student scoping and cache invalidation tests | P0 |
+| Mobile | 402 subscription flow | No Dio 402 interceptor or lock screen | Frozen users get broken UX | Undefined access | Add mobile subscription lock behavior aligned with web/API | P1 |
+| Mobile | College/coaching teacher workflows | Attendance APIs are class/section only | Teachers in colleges/coaching cannot use attendance properly | School-only mobile model | Add academic-context-aware teacher attendance/homework/exam flows | P1 |
+| Mobile | API contract documentation | TSV files are partial/mojibake | Mobile/backend drift | Integration risk | Replace TSVs with clear mobile API contract docs | P1 |
 | RBAC | Per-route frontend guards | `App.tsx` broad protected route surface | Unauthorized screens visible by URL | UX/security gap | Add route permission metadata and AccessGuard enforcement | P1 |
 | Testing | Tenant/branch IDOR tests | Some isolation tests exist, but branch header tampering tests are missing | High risk before deployment | Regression risk | Add integration tests for forged client/branch headers | P0 |
 | Docs | Enterprise architecture docs | Existing docs are school-centric | Onboarding and audits fail | Misimplementation risk | Publish Trust/institution academic model and DB process docs | P1 |
@@ -191,6 +212,16 @@ Frontend modules to add or modify:
 - Add permission-aware route guards, not just menu hiding.
 - Add enterprise dashboard views for Trust-level and institution-level metrics.
 
+Mobile plan:
+
+- Store tokens in platform secure storage.
+- Remove sensitive request/response logging from production builds.
+- Add user/client/institution/student-scoped Isar caches.
+- Add mobile 402 subscription interceptor and frozen/expired institution screen.
+- Keep mobile role scope explicit: parent, student, and teacher for first release.
+- Add institution-type-aware labels and workflows for school, college, and coaching.
+- Align mobile API contracts with backend endpoints and generated clients.
+
 ## I. Testing Plan Summary
 
 Detailed testing plan is in `TESTING_ROADMAP.md`.
@@ -203,6 +234,9 @@ Highest-priority tests:
 - Syllabus branch/academic-branch mapping tests.
 - Manual SQL script idempotency and schema/entity drift tests.
 - Frontend direct-route RBAC tests.
+- Mobile secure-token and cache-isolation tests.
+- Mobile 402 subscription lock tests.
+- Mobile role-routing tests for parent, student, teacher, and unsupported roles.
 - Secret/config validation in CI.
 
 ## J. Phased Implementation Roadmap
@@ -235,5 +269,6 @@ Freeze feature development until at least these are done:
 - SQL/entity drift fixed.
 - Forged tenant/branch header tests passing.
 - Frontend direct-route RBAC checks implemented for high-risk pages.
+- Mobile token/cache handling reviewed before real parent/student data is used.
 
 Before selling to a real Trust, complete Phases 0 through 4 at minimum, and run a controlled pilot only after tenant isolation, subscription lockout/payment, academic setup, RBAC, and database-script discipline are verified by tests.

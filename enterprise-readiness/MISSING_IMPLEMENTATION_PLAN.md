@@ -22,11 +22,16 @@ This plan converts the audit findings into a staged implementation path. It inte
 | P0 | Database discipline | Remove startup DDL mutation | `DatabaseSeeder.cs` dynamic `ALTER TABLE` | Move all schema changes to numbered SQL scripts. |
 | P0 | Schema drift | Fix `Syllabuses.TemplateId` mismatch | SQL 007 adds column; entity missing property | Decide model and align entity, SQL, DTOs, tests. |
 | P0 | Tests | Isolation and billing authorization tests | Test suite has gaps around forged headers and subscriptions | Add integration tests before refactors. |
+| P0 | Mobile security | Secure token storage and production logging | `school-mobile` stores access token in `SharedPreferences`; Dio logs bodies | Use secure storage and disable/redact sensitive logging in production. |
+| P0 | Mobile privacy | User-scoped offline cache | Isar cache helpers store data globally without user/client/institution partitions | Add scoped cache keys and clear/revoke behavior tests. |
 | P1 | Academic model | Explicit program/course/term/department model | `AcademicType` only Course/Branch/Semester/Batch | Add model that supports schools, colleges, coaching, and custom structures. |
 | P1 | Syllabus | Version/import/override workflow | `SyllabusTemplates.cs` is partial | Add versioned global templates and institution-level plans. |
 | P1 | Frontend | Institution selector and route-level permission guards | Sidebar selector commented; routes broadly protected | Add role-aware selector and route permission metadata. |
 | P1 | Exams | Non-school exam targets | `ExamSchedule.ClassRoomId` required | Replace class-room requirement with academic context. |
 | P1 | Subscription UI | Real dashboards and billing history | Mock history and missing `/all` endpoint | Align APIs and pages for SuperAdmin/TrustAdmin/InstitutionAdmin. |
+| P1 | Mobile subscription | Mobile frozen/expired handling | No mobile 402 interceptor or lock screen | Add mobile lock screen and billing-safe messaging. |
+| P1 | Mobile academic flexibility | Mobile teacher attendance is class/section only | `TeacherAttendanceApi` uses `/api/Classes` and `/api/Sections/filter` | Add school/college/coaching academic-context teacher flows. |
+| P1 | Mobile API contracts | Endpoint TSV files are partial and mojibake | `api-parent.tsv`, `api-student.tsv`, `api-teacher.tsv` | Replace with maintained mobile API contract documentation. |
 | P2 | Seeds | Indian master-data packs | `GlobalMasterSeeder` is demo-sized | Add curated, idempotent packs with source metadata. |
 | P2 | Reporting | Trust/institution reports | School-centric docs/routes | Add report dimensions for trust, institution, program, term. |
 | P2 | Performance | Large-volume query and reporting strategy | Unpaged/N+1 paths | Add indexes, projections, pagination, caching, background aggregation. |
@@ -45,6 +50,8 @@ Tasks:
 - Add permission attributes to subscription administration endpoints.
 - Fix `ActivateSubscriptionAsync` audit old-status bug.
 - Add tests for forged `X-Client-Id` and `X-Branch-Id`.
+- Harden mobile token storage and disable sensitive production logging.
+- Partition mobile offline caches by authenticated user, Trust, institution, and student where relevant.
 
 Files likely affected:
 
@@ -57,6 +64,9 @@ Files likely affected:
 - `api/Modules/Academics/Entities/Syllabus.cs`
 - `api/database/scripts/schema/*.sql`
 - `api/tests/**`
+- `school-mobile/lib/features/auth/presentation/providers/auth_provider.dart`
+- `school-mobile/lib/core/network/dio_provider.dart`
+- `school-mobile/lib/core/storage/isar_service.dart`
 
 Acceptance criteria:
 
@@ -65,6 +75,7 @@ Acceptance criteria:
 - No runtime DDL mutation occurs outside manual SQL runner.
 - Subscription admin APIs require correct permissions.
 - Header tampering tests fail before fix and pass after fix.
+- Mobile logout and account-switch tests prove cached student data is not visible to the next user.
 
 Tests required:
 
@@ -73,6 +84,7 @@ Tests required:
 - SQL idempotency tests.
 - Schema/entity drift tests.
 - Tenant and branch header tampering tests.
+- Mobile secure-storage and cache-clearing tests.
 
 Definition of done:
 
@@ -102,6 +114,9 @@ Files likely affected:
 - `api/Modules/Academics/Entities/Branch.cs`
 - `web/src/services/api.ts`
 - `web/src/context/AuthContext.tsx`
+- `school-mobile/lib/core/network/dio_provider.dart`
+- `school-mobile/lib/features/auth/data/models/user_profile.dart`
+- `school-mobile/lib/features/dashboard/presentation/providers/student_provider.dart`
 
 Acceptance criteria:
 
@@ -121,6 +136,7 @@ Definition of done:
 
 - Every scoped query path is backed by tests.
 - All direct API calls enforce scope even if UI is bypassed.
+- Mobile app receives only role-allowed data and never relies on cached cross-user data.
 
 ## Phase 2: Fix Academic Structure Model
 
@@ -133,6 +149,7 @@ Tasks:
 - Create `AcademicContext` or equivalent DTO for APIs that target academic scope.
 - Replace semester-as-class and batch-as-section workarounds.
 - Update student enrollment, exams, timetable, fees, attendance, and reports to use academic context.
+- Update mobile teacher attendance, homework, exam, and syllabus flows to use academic context instead of only class/section.
 
 Files likely affected:
 
@@ -145,6 +162,9 @@ Files likely affected:
 - `web/src/pages/school/admin/CollegeHierarchySetup.tsx`
 - `web/src/pages/school/admin/TimeTable.tsx`
 - `web/src/pages/school/admin/FeeStructures.tsx`
+- `school-mobile/lib/features/teacher/data/attendance_api.dart`
+- `school-mobile/lib/features/teacher/presentation/screens/tabs/teacher_attendance_tab.dart`
+- `school-mobile/lib/features/dashboard/presentation/widgets/service_grid.dart`
 
 Acceptance criteria:
 
@@ -163,6 +183,7 @@ Tests required:
 Definition of done:
 
 - No module needs to pretend semester is class or batch is section.
+- Mobile teacher flows work for at least one school, one college, and one coaching institute pilot scenario.
 
 ## Phase 3: Fix Board/University/Syllabus Architecture
 
@@ -216,6 +237,7 @@ Tasks:
 - Add scheduled jobs for expiry, grace transition, freeze, and overage.
 - Define allowed APIs during frozen/expired states.
 - Add 402 frontend lock screen and billing-only navigation.
+- Add 402 mobile lock screen and clear frozen/expired institution messaging.
 - Build SuperAdmin, Trust Admin, and Institution Admin dashboards.
 
 Files likely affected:
@@ -227,6 +249,8 @@ Files likely affected:
 - `web/src/pages/school/admin/SubscriptionDashboard.tsx`
 - `web/src/services/subscriptionService.ts`
 - `web/src/services/api.ts`
+- `school-mobile/lib/core/network/dio_provider.dart`
+- `school-mobile/lib/features/auth/presentation/providers/auth_provider.dart`
 
 Acceptance criteria:
 
@@ -234,6 +258,7 @@ Acceptance criteria:
 - Billing APIs remain accessible to authorized billing users.
 - Overage and renewal history are auditable.
 - UI reflects exact subscription state.
+- Mobile app shows a clear subscription lock state and does not loop on failed API calls.
 
 Tests required:
 
@@ -260,6 +285,8 @@ Tasks:
 - Add syllabus import/customization pages.
 - Add permission-aware route guards.
 - Improve loading, empty, error, and validation states.
+- Clean mobile school-only labels for college/coaching contexts.
+- Replace mobile TSV endpoint notes with readable API contract docs.
 
 Files likely affected:
 
@@ -269,6 +296,10 @@ Files likely affected:
 - `web/src/pages/school/**`
 - `web/src/pages/superadmin/**`
 - `web/src/services/**`
+- `school-mobile/lib/features/**`
+- `school-mobile/api-parent.tsv`
+- `school-mobile/api-student.tsv`
+- `school-mobile/api-teacher.tsv`
 
 Acceptance criteria:
 
@@ -276,6 +307,7 @@ Acceptance criteria:
 - Institution Admin sees only assigned institution.
 - School, college, and coaching setup flows are distinct and realistic.
 - Direct URL access respects permissions.
+- Mobile parent/student/teacher flows match approved BRD language and backend permissions.
 
 Tests required:
 
@@ -287,6 +319,7 @@ Tests required:
 Definition of done:
 
 - Frontend supports the backend capabilities without mock billing/history data.
+- Mobile daily workflows are aligned with the same backend capability and permission model.
 
 ## Phase 6: Performance/Security Hardening
 
