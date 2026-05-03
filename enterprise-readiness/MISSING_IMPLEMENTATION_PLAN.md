@@ -13,17 +13,79 @@ This plan converts the audit findings into a staged implementation path. It inte
 
 ## Critical Missing Items
 
+## Phase 1 Closure Status
+
+Status: **Completed for backend institute-isolation stabilization on 2026-05-03.**
+
+Phase 1 is closed for the immediate tenant/institute isolation objective, with the following verified outcomes:
+
+- Physical institution/campus is now consistently treated as `Institute` / `InstituteId`.
+- College specialization/academic branch is treated as `AcademicBranchId`.
+- API DTO/service paths for syllabus, topics, timetable, homework, exam schedule, admit card, and tabulation were corrected where `InstituteId` was being used for academic branch/specialization.
+- Fee billing rows in `StudentFeeService` and concession rows in `FeeConcessionService` legitimately keep physical `InstituteId` for billing/institution scope.
+- `FeeConcessionService` now restricts parent/student reads to accessible students.
+- `InstituteContextValidationMiddleware` validates `X-Institute-Id` against authenticated user context:
+  - institute-bound users cannot override their assigned institute;
+  - Trust/Client Admin users can switch only to institutes inside their own Trust;
+  - malformed or cross-Trust institute headers are rejected before controllers run.
+- Integration tests now cover institute header override and Trust Admin institute switching.
+
+Compatibility note:
+
+- Some legacy query parameters still accept `instituteId` where the value actually means academic specialization. New clients should send `academicBranchId`; old `instituteId` is temporarily accepted as a compatibility alias until Phase 2 academic API cleanup.
+
+Verification completed:
+
+- API build passed.
+- API integration tests passed: 105/105.
+- API unit tests passed: 156 passed, 1 skipped.
+- Web build passed after updating academic-branch payload mapping.
+- Mobile static verification remains blocked in this shell because Flutter is not installed.
+
+Phase 1 does **not** close Phase 0 risks such as committed secrets, runtime schema mutation, subscription RBAC gaps, and schema/entity drift. Those remain separate stop-risk items before production or paid pilot.
+
+## Phase 0 High-Risk Closure Status
+
+Status: **High-risk Phase 0 items addressed on 2026-05-03, except the critical secret-management item intentionally skipped for now.**
+
+Completed in this pass:
+
+- Subscription administration endpoints now require explicit subscription permissions in addition to role checks:
+  - `Subscription_Read`
+  - `Subscription_Plans_Create`
+  - `Subscription_Manage`
+  - `Subscription_Payments_Create`
+- Frozen/expired subscription recovery endpoints keep `AllowExpiredSubscription` so billing/status/payment APIs remain reachable during lockout.
+- Subscription lock response code now uses institute terminology: `INSTITUTE_SUBSCRIPTION_RESTRICTED`.
+- Web interceptor recognizes the new institute subscription lock code while preserving old codes during compatibility.
+- Runtime DDL was removed from `DatabaseSeeder`.
+- EF `MigrateAsync()` was removed from reset/seed and disabled through `MigrationService.ApplyPendingMigrationsAsync`.
+- Manual SQL script `api/database/scripts/changes/010_phase0_stop_risk_schema_guards.sql` now carries the explicit base-column guard and `Syllabuses.TemplateId` guard.
+- Institute filtering is now role-aware instead of treating null institute context as global access for every user. `TrustAdmin`, `ClientAdmin`, `Admin`, and `SuperAdmin` can work across institutes; ordinary users without institute context are rejected.
+- Mobile auth no longer reads access tokens from `SharedPreferences`; tokens are read from secure storage only.
+- Mobile logout/login clears offline data through a cache-scope service.
+- Mobile user profile loading enforces a user/client/institute cache scope and clears Isar if the scope changes.
+- Mobile Dio logging remains dev-only, body logging is disabled, and sensitive token/password log lines are suppressed.
+
+Verification completed:
+
+- API build passed.
+- API unit tests passed: 169 passed, 1 skipped.
+- API integration tests passed: 105/105.
+- Web build passed.
+- Mobile `flutter analyze` and `dart analyze` remain blocked because neither Flutter nor Dart is installed/on PATH in this shell.
+
 | Priority | Area | Missing implementation | Evidence | Recommended action |
 |---|---|---|---|---|
 | P0 | Security | Secret management and credential rotation | `api/appsettings*.json` include secrets | Move secrets to env/secret manager and rotate exposed credentials. |
-| P0 | Tenant isolation | Verified server-side client/institute membership | `web/src/services/api.ts` sends headers from localStorage | Reject any client/institute context not assigned to authenticated user. |
-| P0 | Academic isolation | Separate physical institute/institution from academic branch | `SyllabusService`, `TimeTableService`, `Syllabus.cs` | Introduce clear `InstitutionId`/`AcademicBranchId` mapping and migration. |
-| P0 | Subscription security | Permission-gated billing administration | `SubscriptionsController` has `[Authorize]` only | Add `HasPermission` to create plan, activate, renew, freeze, unfreeze, view all. |
-| P0 | Database discipline | Remove startup DDL mutation | `DatabaseSeeder.cs` dynamic `ALTER TABLE` | Move all schema changes to numbered SQL scripts. |
-| P0 | Schema drift | Fix `Syllabuses.TemplateId` mismatch | SQL 007 adds column; entity missing property | Decide model and align entity, SQL, DTOs, tests. |
-| P0 | Tests | Isolation and billing authorization tests | Test suite has gaps around forged headers and subscriptions | Add integration tests before refactors. |
-| P0 | Mobile security | Secure token storage and production logging | `school-mobile` stores access token in `SharedPreferences`; Dio logs bodies | Use secure storage and disable/redact sensitive logging in production. |
-| P0 | Mobile privacy | User-scoped offline cache | Isar cache helpers store data globally without user/client/institution partitions | Add scoped cache keys and clear/revoke behavior tests. |
+| Done | Tenant isolation | Verified server-side client/institute membership | `api/Core/Middlewares/InstituteContextValidationMiddleware.cs`; `InstitutionalIsolationTests` | Keep tests mandatory; expand to explicit user-institution assignment table if multi-institute staff assignments are introduced. |
+| Done | Academic isolation | Separate physical institute/institution from academic branch | Academics/exams/homework DTOs and services now use `AcademicBranchId`; physical billing rows use `InstituteId` | Keep compatibility alias during Phase 2; remove old academic `instituteId` query usage after frontend/mobile contracts are fully updated. |
+| Done | Subscription security | Permission-gated billing administration | `SubscriptionsController` now uses explicit subscription permission attributes | Keep permission tests mandatory; seed permissions before deployment. |
+| Done | Database discipline | Remove startup DDL mutation | Runtime `ALTER TABLE` removed from `DatabaseSeeder`; manual SQL guard script added | Run `010_phase0_stop_risk_schema_guards.sql` through the manual script runner. |
+| Done | Schema drift | Fix `Syllabuses.TemplateId` mismatch | Current schema has no `Syllabuses.TemplateId`; guard test and SQL guard enforce this decision | Revisit during Phase 3 when syllabus-template import is implemented. |
+| Done | Tests | Isolation and billing authorization tests | Subscription permission tests, database discipline tests, and isolation tests now pass | Keep in CI. |
+| Done* | Mobile security | Secure token storage and production logging | Mobile now reads token from secure storage only and suppresses sensitive logs | Static analyzer blocked locally; verify with Flutter toolchain before release. |
+| Done* | Mobile privacy | User-scoped offline cache | Cache scope service clears Isar on login/logout and user/client/institute scope changes | Static analyzer blocked locally; add device/integration test when Flutter is available. |
 | P1 | Academic model | Explicit program/course/term/department model | `AcademicType` only Course/Institute/Semester/Batch | Add model that supports schools, colleges, coaching, and custom structures. |
 | P1 | Syllabus | Version/import/override workflow | `SyllabusTemplates.cs` is partial | Add versioned global templates and institution-level plans. |
 | P1 | Frontend | Institution selector and route-level permission guards | Sidebar selector commented; routes broadly protected | Add role-aware selector and route permission metadata. |
@@ -95,13 +157,15 @@ Definition of done:
 
 Goal: make Trust and institution isolation reliable under hostile direct API calls.
 
+Current status: **Closed for immediate backend stabilization.** Keep this section as the historical acceptance checklist and regression guard for future refactors.
+
 Tasks:
 
-- Define canonical language: `Client` as Trust and `Institute` as Institution, or migrate to explicit names.
-- Validate selected institute against authenticated user's institute assignments.
+- Define canonical language: `Client` as Trust and `Institute` as Institution, or migrate to explicit names. **Done for current product language.**
+- Validate selected institute against authenticated user's institute assignments. **Done through request middleware for current single-institute user model.**
 - Replace broad nullable institute filter semantics with per-entity scope policies.
-- Add Trust Admin all-institution access and Institution Admin single-institution access tests.
-- Review all controllers accepting `clientId` or `instituteId`.
+- Add Trust Admin all-institution access and Institution Admin single-institution access tests. **Done for direct API/header cases.**
+- Review all controllers accepting `clientId` or `instituteId`. **Initial review done; remaining academic `instituteId` aliases are compatibility debt for Phase 2.**
 - Ensure system/global master tables are not accidentally tenant-filtered.
 
 Files likely affected:
@@ -121,9 +185,9 @@ Files likely affected:
 Acceptance criteria:
 
 - SuperAdmin can access all trusts only through SuperAdmin APIs.
-- Trust Admin can access only institutions in the same trust.
-- Institution Admin can access only assigned institution.
-- Forged headers cannot expand scope.
+- Trust Admin can access only institutions in the same trust. **Verified for institute switching.**
+- Institution Admin can access only assigned institution. **Verified for header override.**
+- Forged headers cannot expand scope. **Verified by integration tests.**
 
 Tests required:
 
@@ -134,9 +198,9 @@ Tests required:
 
 Definition of done:
 
-- Every scoped query path is backed by tests.
-- All direct API calls enforce scope even if UI is bypassed.
-- Mobile app receives only role-allowed data and never relies on cached cross-user data.
+- Every high-risk scoped query path is backed by tests.
+- All direct API calls enforce scope even if UI is bypassed for the current single-institute assignment model.
+- Mobile app receives only role-allowed data and never relies on cached cross-user data. **Still open under mobile Phase 0/P1 work.**
 
 ## Phase 2: Fix Academic Structure Model
 

@@ -177,8 +177,8 @@ Minimum performance gates for pilot:
 
 | Phase | Required tests before completion |
 |---|---|
-| Phase 0 | Config safety, subscription authorization, schema drift, SQL idempotency, forged header tests. |
-| Phase 1 | Trust isolation, institution isolation, institute assignment, direct API IDOR tests. |
+| Phase 0 | Config safety remains open by request. Subscription authorization, database discipline/schema guard, forged header, and institute-filter regression tests are now added/passing. Mobile analyzer tests are blocked until Flutter/Dart is available. |
+| Phase 1 | Trust isolation, institution isolation, institute assignment, direct API IDOR tests. Status: backend direct-header tests added and passing; keep as regression suite. |
 | Phase 2 | Academic context unit/integration tests for school, college, coaching, custom. |
 | Phase 3 | Syllabus version/import/override tests and seed idempotency tests. |
 | Phase 4 | Subscription lifecycle, freeze/402, overage, payment/renewal history tests. |

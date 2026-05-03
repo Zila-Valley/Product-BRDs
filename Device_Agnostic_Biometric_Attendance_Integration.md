@@ -230,7 +230,7 @@ Instead of synchronously resolving attendances during the webhook call (which co
 
 ## 5. Frontend Integration Foundation
 - **React Service Layer:** Added `biometricService.ts` exposing robust typing for React components to talk to the new API.
-- **Admin UI Pages:** Built the scaffolding for `DeviceList.tsx` allowing SuperAdmins/BranchAdmins to view and manage physical/cloud devices from the UI.
+- **Admin UI Pages:** Built the scaffolding for `DeviceList.tsx` allowing SuperAdmins/InstituteAdmins to view and manage physical/cloud devices from the UI.
 
 The **Biometric Module** is designed to act as a bridge between physical attendance hardware (like ZKTeco fingerprint or face scanners) and your School ERP’s attendance records.
 

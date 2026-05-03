@@ -18,23 +18,23 @@ The implementation has useful foundations:
 The implementation is only partially complete:
 
 - `Client` is still partly modeled as a school, not a Trust or education group.
-- `Institute` is treated as institution in some places, while "institute" is also used for college academic branch in DTOs and UI.
+- `Institute` is now the preferred product term for a physical institution/campus, while `AcademicBranchId` must be used for college specializations such as CSE, Mechanical, and Civil.
 - School class/section assumptions still exist in exams, fees, timetable, syllabus, docs, routes, and frontend labels.
 - Subscription business logic exists, but RBAC and billing-route protection are not enterprise-safe.
 - Global masters and syllabus templates are seeded with demo-scale data, not production-grade Indian coverage.
 - Frontend pages exist for several concepts but many are partial, school-labeled, mock-backed, or not aligned with backend APIs.
 - The Flutter mobile app exists as an active channel for parent, student, and teacher workflows, but it is not yet enterprise-hardened for secure storage, subscription lockout, tenant/institution context, or college/coaching terminology.
 
-The highest risks are:
+The highest remaining risks are:
 
 - Critical security exposure through hardcoded secrets and credentials in environment files.
-- High tenant and institute isolation risk from nullable institute filters and client/institute headers controlled by frontend storage.
-- High subscription-administration risk because sensitive subscription actions are only `[Authorize]`, not permission-gated.
-- High schema discipline risk because startup seed code performs dynamic schema mutation despite the stated manual-SQL-only process.
+- Medium tenant and institute isolation risk from nullable institute filters. Direct `X-Institute-Id` header tampering is now mitigated by backend middleware, but per-entity nullable-scope policy still needs refinement.
+- Subscription-administration risk was reduced by adding explicit subscription permission gates to billing endpoints.
+- Schema discipline risk was reduced by removing startup DDL and disabling EF migration execution from seeding/reset paths.
 - High academic-model risk because school, college, and coaching structures are mixed using overloaded IDs and MVP mappings.
-- High mobile security and isolation risk because the app stores access tokens in `SharedPreferences`, logs request/response bodies, and uses broad local Isar caches that are not clearly scoped by user, Trust, institution, or selected student.
+- Mobile security risk was reduced by secure-storage-only token reads, sensitive log suppression, and cache-scope clearing; analyzer verification is still blocked until Flutter/Dart is available.
 
-Verdict: freeze new feature work until Phase 0 and Phase 1 stabilization are complete. Continue from the current codebase only after fixing the highest-risk architecture gaps.
+Verdict: Phase 1 backend institute-isolation stabilization is complete, but the product is still not enterprise-ready. Freeze production/pilot sales until Phase 0 security/schema/subscription stop-risk items are closed and Phase 2 academic model work is underway.
 
 ## Demo-Only Implementation Signals
 
@@ -54,13 +54,12 @@ The following parts look impressive in reports or UI but are not production-grad
 | Risk | Area | Evidence | What was found | Why it matters |
 |---|---|---|---|---|
 | Critical | Security | `api/appsettings.json`, `api/appsettings.Development.json`, `api/appsettings.Production.json`, `api/appsettings.Uat.json` | JWT secret keys, database password, superadmin password, SendGrid key, and MailGun key are present in config files. | Production secrets in source/config are a direct compromise risk. |
-| Critical | Academic model | `api/Modules/Academics/Entities/Syllabus.cs`; `api/Modules/Academics/Services/SyllabusService.cs` | `InstituteId` is physical institute for tenancy, while service/DTO logic also uses `InstituteId` as college academic branch. `AcademicBranchId` also exists. | This creates institute-isolation ambiguity and can corrupt or leak syllabus/timetable data. |
-| High | Subscription RBAC | `api/Modules/Subscriptions/Controllers/SubscriptionsController.cs` | Plan creation, trial start, activation, renewal, freeze, unfreeze, client subscription lookup, and history endpoints are class-level `[Authorize]` only. | Any authenticated user may be able to perform billing/admin actions by GUID if routes are reachable. |
-| High | Institute isolation | `api/Persistence/ApplicationDbContext.cs`, `ApplyInstituteFilter` | Institute filter allows `entity.InstituteId == CurrentInstituteId OR CurrentInstituteId == null OR entity.InstituteId == null`. | Null institute records are visible to institute users. Trust users with null institute see all institute data under client. This must be intentional per entity, not global. |
-| High | Tenant/institute headers | `web/src/services/api.ts`; `api/Core/Services/UserContextService.cs` | Frontend sends `X-Client-Id` and `X-Institute-Id` from local storage; server accepts institute context through user context/header flow. | If institute assignment is not strictly validated server-side for every request, this is an IDOR vector. |
-| High | Database discipline | `api/Persistence/DatabaseSeeder.cs` | Startup seeder dynamically runs `ALTER TABLE` to add `DisplayOrder` and `IsDeleted` across tables. | This bypasses manual SQL review, creates uncontrolled production schema mutation, and hides script drift. |
-| High | Database discipline | `api/Persistence/DatabaseSeeder.cs`, `ResetAndSeedAsync` | Calls `db.Database.MigrateAsync()` despite the documented manual-SQL-only policy. | This contradicts architecture rules and can execute unreviewed EF migrations if any appear. |
-| High | Schema/entity drift | `api/database/scripts/schema/007_branch_academic_configuration.sql`; `api/Modules/Academics/Entities/Syllabus.cs` | SQL adds `TemplateId` to `Syllabuses`, but the C# `Syllabus` entity has no `TemplateId` property. | Runtime queries, inserts, and reporting can diverge from actual schema. |
+| Medium | Academic model | `api/Modules/Academics/DTOs/*`; `api/Modules/Exams/DTOs/*`; `web/src/pages/school/admin/*`; `mobile/lib/features/**` | Initial audit found DTO/service logic using `InstituteId` as a college academic branch. Phase 1 separated physical `InstituteId` from academic `AcademicBranchId` in high-risk API paths and web payloads. Some compatibility aliases still accept legacy query names. | Remaining risk is contract confusion during Phase 2 unless old academic `instituteId` aliases are retired after client updates. |
+| Done | Subscription RBAC | `api/Modules/Subscriptions/Controllers/SubscriptionsController.cs`; `api/Core/Enums/MultiTenantRBAC/PermissionEnum.cs` | Subscription admin/read/payment endpoints now require explicit subscription permissions. | Keep permission seeding and regression tests mandatory. |
+| Done | Institute isolation | `api/Persistence/ApplicationDbContext.cs`; `api/Core/Middlewares/InstituteContextValidationMiddleware.cs`; `api/Persistence/AppRoles.cs` | Institute filter is role-aware and ordinary users without institute context are rejected; TrustAdmin is explicitly recognized for all-institute Trust scope. | Future multi-institute staff assignment still needs explicit assignment modeling. |
+| Medium | Tenant/institute headers | `web/src/services/api.ts`; `api/Core/Middlewares/InstituteContextValidationMiddleware.cs`; `api/Core/Services/UserContextService.cs` | Frontend still sends `X-Institute-Id`, but backend now validates the header against the authenticated user's client/institute context before controllers run. | This closes the direct header-forgery gap for current role model; future multi-institute staff assignments need an explicit assignment table. |
+| Done | Database discipline | `api/Persistence/DatabaseSeeder.cs`; `api/Core/Services/MigrationService.cs`; `api/database/scripts/changes/010_phase0_stop_risk_schema_guards.sql` | Runtime `ALTER TABLE` and reset-time `MigrateAsync()` were removed; EF migration apply path now throws; manual SQL guard script added. | Manual SQL runner remains the only approved schema-change path. |
+| Done | Schema/entity drift | `api/database/scripts/schema/000_initial_tables.sql`; `api/tests/SchoolErp.UnitTests/Database/DatabaseDisciplineTests.cs` | Current schema does not add `Syllabuses.TemplateId`; test and SQL guard enforce that decision until Phase 3 syllabus imports. | Add template linkage deliberately in Phase 3 if required. |
 | High | Exams | `api/Modules/Exams/Entities/ExamSchedule.cs` | `ClassRoomId` is required even though college/coaching fields exist. | College, coaching, semester, and batch exam schedules remain school-classroom constrained. |
 | High | Subscription freeze | `api/Core/Filters/RequireActiveInstituteSubscriptionFilter.cs`; `api/Modules/Subscriptions/Controllers/SubscriptionsController.cs` | Global subscription filter blocks frozen/expired institutes, but billing endpoints are not clearly marked with `AllowExpiredSubscriptionAttribute`. | A frozen institute may be blocked from payment/renewal APIs, while privileged admin APIs remain insufficiently permission-gated. |
 | High | Subscription correctness | `api/Modules/Subscriptions/Services/SubscriptionService.cs`, `ActivateSubscriptionAsync` | The method sets subscription status to `Active` before recording the event old status. | Audit log records wrong state transitions, weakening billing/legal traceability. |
@@ -120,12 +119,12 @@ Overall score: 3.6/10.
 
 | Area | Missing item | Current evidence | Business impact | Technical risk | Recommended fix | Priority |
 |---|---|---|---|---|---|---|
-| Security | Remove committed secrets and rotate credentials | `api/appsettings*.json` contain secrets | Cannot pass enterprise security review | Critical compromise risk | Move secrets to environment/secret manager; rotate all exposed values | P0 |
-| Tenant isolation | Server-side institute assignment validation | `web/src/services/api.ts` sends institute/client headers from localStorage | User may access another institute by changing local storage | IDOR | Validate requested institute belongs to authenticated user/client before context is set | P0 |
-| Institute model | Separate physical InstituteId from academic AcademicBranchId | `Syllabus`, `TimeTable`, services use `InstituteId` ambiguously | Wrong data under multi-institute Trusts | Data leakage/corruption | Rename physical institute to `InstitutionId` conceptually; use `AcademicBranchId` for course branch | P0 |
-| Subscription | Permission-gate billing admin endpoints | `SubscriptionsController` only `[Authorize]` | Institute staff could freeze/activate/renew | Authorization bypass | Add permission attributes and client/institute checks | P0 |
-| Database | Stop runtime schema mutation | `DatabaseSeeder` executes dynamic `ALTER TABLE` | Production schema changes can occur unexpectedly | Drift and outage risk | Move all schema changes to versioned SQL scripts | P0 |
-| Database | Resolve SQL/entity mismatch | SQL adds `Syllabuses.TemplateId`; entity lacks property | Data inaccessible/inconsistent | Runtime drift | Add entity property or remove column through script after decision | P0 |
+| Security | Remove committed secrets and rotate credentials | `api/appsettings*.json` contain secrets | Cannot pass enterprise security review | Critical compromise risk | Move secrets to environment/secret manager; rotate all exposed values | P0 skipped by request |
+| Tenant isolation | Server-side institute assignment validation | `InstituteContextValidationMiddleware` and integration tests now exist | Future multi-institute staff assignment model is not explicit yet | Medium IDOR risk if new assignment modes bypass middleware assumptions | Add `UserInstitutionAssignments` when multi-institute staff roles are introduced | Done/P1 follow-up |
+| Institute model | Separate physical InstituteId from academic AcademicBranchId | Phase 1 corrected high-risk academic DTO/service paths | Legacy query alias remains | Contract confusion | Remove academic `instituteId` aliases after Phase 2 client contract cleanup | Done/P2 cleanup |
+| Subscription | Permission-gate billing admin endpoints | Subscription endpoints now have explicit permission attributes | Billing operations now have backend permission gates | Regression risk if permissions are not seeded | Keep tests and seed new permission keys | Done |
+| Database | Stop runtime schema mutation | Seeder DDL removed; manual SQL guard script added | Production schema mutation removed from startup | Script runner must be used consistently | Keep database discipline tests in CI | Done |
+| Database | Resolve SQL/entity mismatch | Current schema has no `Syllabuses.TemplateId`; guard test added | Drift claim resolved for current schema | Phase 3 may need a deliberate import model | Reopen as Phase 3 design decision | Done |
 | Academic model | Trust/institution/program/course model | Client/Institute plus `AcademicStructure` only | Cannot reliably sell to mixed Trusts | Model debt | Add explicit `Institution`, `AcademicProgram`, `Course`, `Department/Stream`, `Term` model | P1 |
 | Exams | Non-school exam schedules | `ExamSchedule.ClassRoomId` required | Colleges/coaching cannot schedule correctly | Schema constraint bug | Make exam target polymorphic/academic-context based | P1 |
 | Syllabus | Syllabus version/import/override | Template lacks effective year/import copy/override | Cannot manage board/university changes safely | Data lineage loss | Add `SyllabusVersion`, `InstitutionSyllabusPlan`, `SyllabusOverride` | P1 |

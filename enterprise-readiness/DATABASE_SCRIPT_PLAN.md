@@ -6,11 +6,22 @@ Date: 2026-05-03
 
 The repository has a manual SQL structure under `api/database/scripts/` and a `SchemaVersions` runner in `api/Core/Services/DatabaseMigrationService.cs`. This is a good start.
 
-However, the current database discipline is not enterprise-safe because:
+Phase 1 note:
 
-- `api/Persistence/DatabaseSeeder.cs` performs dynamic runtime `ALTER TABLE` changes.
-- `DatabaseSeeder.ResetAndSeedAsync` calls `db.Database.MigrateAsync()`.
-- SQL script `007_branch_academic_configuration.sql` adds `Syllabuses.TemplateId`, but `api/Modules/Academics/Entities/Syllabus.cs` does not define it.
+- Physical institution remains `InstituteId`.
+- Academic college specialization remains `AcademicBranchId`.
+- Manual SQL must never rename or repurpose `AcademicBranchId` as `InstituteId`.
+- Legacy script/table/index names containing `Branch` should be treated as naming cleanup only when they refer to physical institutions; academic branch/specialization names must remain explicit.
+
+After the Phase 0 high-risk pass, the immediate database discipline blockers were addressed:
+
+- Runtime `ALTER TABLE` was removed from `api/Persistence/DatabaseSeeder.cs`.
+- Reset/seed no longer calls EF `MigrateAsync()`.
+- `api/Core/Services/MigrationService.cs` now rejects EF migration application.
+- `api/database/scripts/changes/010_phase0_stop_risk_schema_guards.sql` carries the explicit base-column and `Syllabuses.TemplateId` guard.
+
+Remaining database discipline concerns:
+
 - Some SQL scripts rely on later startup patching for columns such as `IsDeleted`.
 - Rollback strategy is optional and not consistently present.
 - Applied script checksum drift is not clearly rejected.
@@ -100,7 +111,7 @@ Use the existing numeric order after `009_add_trust_name_to_clients.sql`.
 
 | Script | Purpose |
 |---|---|
-| `010_fix_schema_drift_and_remove_runtime_patch_dependencies.sql` | Add missing base columns explicitly, resolve `Syllabuses.TemplateId`, remove dependency on seeder DDL. |
+| `010_phase0_stop_risk_schema_guards.sql` | Added. Explicit base-column guard and `Syllabuses.TemplateId` guard; removes dependency on seeder DDL. |
 | `011_harden_schema_versions_checksum.sql` | Add checksum validation fields and uniqueness. |
 | `012_institution_type_and_affiliation_bodies.sql` | Add rich institution types and affiliation bodies. |
 | `013_academic_program_course_department_terms.sql` | Add program/course/stream/department/academic branch/term tables. |
@@ -110,7 +121,7 @@ Use the existing numeric order after `009_add_trust_name_to_clients.sql`.
 | `017_exam_timetable_academic_context.sql` | Add clear academic-context columns and migrate from overloaded institute/class assumptions. |
 | `018_fee_plans_unified_academic_context.sql` | Add unified fee plans and migration bridge from fee structures. |
 | `019_subscription_hardening.sql` | Add missing snapshots, overage, audit fields, and constraints. |
-| `020_tenant_branch_scale_indexes.sql` | Add high-volume tenant/institute/year indexes. |
+| `020_tenant_institute_scale_indexes.sql` | Add high-volume tenant/institute/year indexes. |
 | `021_user_institution_assignments.sql` | Add explicit user-institution access table if current role/user model is insufficient. |
 | `022_cleanup_legacy_school_only_columns.sql` | Carefully deprecate or move school-only fields after compatibility window. |
 
