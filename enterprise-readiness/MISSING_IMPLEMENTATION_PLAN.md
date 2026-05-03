@@ -16,15 +16,15 @@ This plan converts the audit findings into a staged implementation path. It inte
 | Priority | Area | Missing implementation | Evidence | Recommended action |
 |---|---|---|---|---|
 | P0 | Security | Secret management and credential rotation | `api/appsettings*.json` include secrets | Move secrets to env/secret manager and rotate exposed credentials. |
-| P0 | Tenant isolation | Verified server-side client/branch membership | `web/src/services/api.ts` sends headers from localStorage | Reject any client/branch context not assigned to authenticated user. |
-| P0 | Academic isolation | Separate physical branch/institution from academic branch | `SyllabusService`, `TimeTableService`, `Syllabus.cs` | Introduce clear `InstitutionId`/`AcademicBranchId` mapping and migration. |
+| P0 | Tenant isolation | Verified server-side client/institute membership | `web/src/services/api.ts` sends headers from localStorage | Reject any client/institute context not assigned to authenticated user. |
+| P0 | Academic isolation | Separate physical institute/institution from academic branch | `SyllabusService`, `TimeTableService`, `Syllabus.cs` | Introduce clear `InstitutionId`/`AcademicBranchId` mapping and migration. |
 | P0 | Subscription security | Permission-gated billing administration | `SubscriptionsController` has `[Authorize]` only | Add `HasPermission` to create plan, activate, renew, freeze, unfreeze, view all. |
 | P0 | Database discipline | Remove startup DDL mutation | `DatabaseSeeder.cs` dynamic `ALTER TABLE` | Move all schema changes to numbered SQL scripts. |
 | P0 | Schema drift | Fix `Syllabuses.TemplateId` mismatch | SQL 007 adds column; entity missing property | Decide model and align entity, SQL, DTOs, tests. |
 | P0 | Tests | Isolation and billing authorization tests | Test suite has gaps around forged headers and subscriptions | Add integration tests before refactors. |
 | P0 | Mobile security | Secure token storage and production logging | `school-mobile` stores access token in `SharedPreferences`; Dio logs bodies | Use secure storage and disable/redact sensitive logging in production. |
 | P0 | Mobile privacy | User-scoped offline cache | Isar cache helpers store data globally without user/client/institution partitions | Add scoped cache keys and clear/revoke behavior tests. |
-| P1 | Academic model | Explicit program/course/term/department model | `AcademicType` only Course/Branch/Semester/Batch | Add model that supports schools, colleges, coaching, and custom structures. |
+| P1 | Academic model | Explicit program/course/term/department model | `AcademicType` only Course/Institute/Semester/Batch | Add model that supports schools, colleges, coaching, and custom structures. |
 | P1 | Syllabus | Version/import/override workflow | `SyllabusTemplates.cs` is partial | Add versioned global templates and institution-level plans. |
 | P1 | Frontend | Institution selector and route-level permission guards | Sidebar selector commented; routes broadly protected | Add role-aware selector and route permission metadata. |
 | P1 | Exams | Non-school exam targets | `ExamSchedule.ClassRoomId` required | Replace class-room requirement with academic context. |
@@ -49,7 +49,7 @@ Tasks:
 - Fix or explicitly map `Syllabuses.TemplateId`.
 - Add permission attributes to subscription administration endpoints.
 - Fix `ActivateSubscriptionAsync` audit old-status bug.
-- Add tests for forged `X-Client-Id` and `X-Branch-Id`.
+- Add tests for forged `X-Client-Id` and `X-Institute-Id`.
 - Harden mobile token storage and disable sensitive production logging.
 - Partition mobile offline caches by authenticated user, Trust, institution, and student where relevant.
 
@@ -83,7 +83,7 @@ Tests required:
 - Subscription authorization integration tests.
 - SQL idempotency tests.
 - Schema/entity drift tests.
-- Tenant and branch header tampering tests.
+- Tenant and institute header tampering tests.
 - Mobile secure-storage and cache-clearing tests.
 
 Definition of done:
@@ -91,17 +91,17 @@ Definition of done:
 - P0 findings in the audit are resolved or have explicit risk acceptance.
 - CI blocks unsafe config and schema drift.
 
-## Phase 1: Fix Tenant/Branch Isolation Gaps
+## Phase 1: Fix Tenant/Institute Isolation Gaps
 
 Goal: make Trust and institution isolation reliable under hostile direct API calls.
 
 Tasks:
 
-- Define canonical language: `Client` as Trust and `Branch` as Institution, or migrate to explicit names.
-- Validate selected branch against authenticated user's branch assignments.
-- Replace broad nullable branch filter semantics with per-entity scope policies.
+- Define canonical language: `Client` as Trust and `Institute` as Institution, or migrate to explicit names.
+- Validate selected institute against authenticated user's institute assignments.
+- Replace broad nullable institute filter semantics with per-entity scope policies.
 - Add Trust Admin all-institution access and Institution Admin single-institution access tests.
-- Review all controllers accepting `clientId` or `branchId`.
+- Review all controllers accepting `clientId` or `instituteId`.
 - Ensure system/global master tables are not accidentally tenant-filtered.
 
 Files likely affected:
@@ -111,7 +111,7 @@ Files likely affected:
 - `api/Core/Middleware/*`
 - `api/Core/Helpers/Auth/*`
 - `api/Modules/Identity/**`
-- `api/Modules/Academics/Entities/Branch.cs`
+- `api/Modules/Academics/Entities/Institute.cs`
 - `web/src/services/api.ts`
 - `web/src/context/AuthContext.tsx`
 - `school-mobile/lib/core/network/dio_provider.dart`
@@ -128,7 +128,7 @@ Acceptance criteria:
 Tests required:
 
 - Trust isolation integration tests.
-- Branch isolation integration tests.
+- Institute isolation integration tests.
 - Header forgery tests.
 - RBAC plus tenant-scope tests.
 
@@ -243,7 +243,7 @@ Tasks:
 Files likely affected:
 
 - `api/Modules/Subscriptions/**`
-- `api/Core/Filters/RequireActiveBranchSubscriptionFilter.cs`
+- `api/Core/Filters/RequireActiveInstituteSubscriptionFilter.cs`
 - `api/Core/Attributes/AllowExpiredSubscriptionAttribute.cs`
 - `web/src/pages/superadmin/Subscriptions.tsx`
 - `web/src/pages/school/admin/SubscriptionDashboard.tsx`
@@ -254,7 +254,7 @@ Files likely affected:
 
 Acceptance criteria:
 
-- Frozen branch cannot access operational APIs.
+- Frozen institute cannot access operational APIs.
 - Billing APIs remain accessible to authorized billing users.
 - Overage and renewal history are auditable.
 - UI reflects exact subscription state.
@@ -327,7 +327,7 @@ Goal: prepare for large Trusts with 50+ institutions and lakhs of records.
 
 Tasks:
 
-- Add indexes for tenant, branch, academic year, student, fee, attendance, and reporting queries.
+- Add indexes for tenant, institute, academic year, student, fee, attendance, and reporting queries.
 - Replace N+1 and unpaged queries.
 - Add query projections for dashboards.
 - Add caching for global masters and permissions.

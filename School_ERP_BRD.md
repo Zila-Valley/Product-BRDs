@@ -46,7 +46,7 @@ The system must support:
 | Term | Meaning | Example |
 |---|---|---|
 | Trust / Client / Organization | The paying customer or education group. | ABC Education Trust |
-| Institution / Branch | One school, college, coaching center, or campus under a Trust. | ABC Engineering College |
+| Institute / Institution | One school, college, coaching center, or campus under a Trust. | ABC Engineering College |
 | Institution Type | Category of institution. | School, Engineering College, Coaching Institute |
 | Board | School education authority. | CBSE, Maharashtra State Board, ICSE |
 | University | College affiliation authority. | Mumbai University, VTU |
@@ -86,7 +86,7 @@ The ERP must support these business areas:
 - Communication and notices.
 - Front office.
 - Library, hostel, transport, inventory, and assets.
-- Branch/institution-level SaaS subscription management.
+- Institute/institution-level SaaS subscription management.
 - Reports and dashboards.
 - Audit logs and compliance records.
 - Web admin portal for full ERP operations.
@@ -417,7 +417,7 @@ For colleges:
 - Course.
 - Stream.
 - Department.
-- Academic branch.
+- Academic institute.
 - Year or semester.
 - Credits.
 - Elective subjects.
@@ -1007,7 +1007,7 @@ A teacher logs into the mobile app and sees assigned classes or batches. The tea
 |---|---|---|
 | School-only model used for all institutions | Colleges/coaching institutes cannot use product properly | Institution-type-aware academic model |
 | Weak tenant isolation | Data leakage between Trusts | Strict server-side access checks |
-| Weak institution isolation | One branch sees another branch's data | Role and institution assignment checks |
+| Weak institution isolation | One institute sees another institute's data | Role and institution assignment checks |
 | Incomplete subscription lock | Non-paying institutions keep using product or paying users get blocked from billing | Clear subscription rules and tests |
 | Poor seed data | Setup looks complete but fails in real customer onboarding | Production-grade master data strategy |
 | Hardcoded roles/secrets | Security and maintenance issues | Config and RBAC governance |

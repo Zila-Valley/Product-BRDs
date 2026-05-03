@@ -4,12 +4,12 @@ Date: 2026-05-03
 
 ## Current Coverage Summary
 
-The repository has a useful test foundation, especially under `api/tests`. Existing coverage appears to include some finance/institution isolation tests, global master seeder tests, database migration service tests, client/branch/auth/controller tests, and limited frontend Playwright smoke flows.
+The repository has a useful test foundation, especially under `api/tests`. Existing coverage appears to include some finance/institution isolation tests, global master seeder tests, database migration service tests, client/institute/auth/controller tests, and limited frontend Playwright smoke flows.
 
 The test suite is not yet enterprise-ready because the highest-risk SaaS paths are not fully covered:
 
-- Forged tenant/branch headers.
-- Subscription authorization and branch freeze behavior.
+- Forged tenant/institute headers.
+- Subscription authorization and institute freeze behavior.
 - Syllabus import/version/customization.
 - SQL script/entity drift.
 - Frontend direct-route RBAC.
@@ -21,11 +21,11 @@ The test suite is not yet enterprise-ready because the highest-risk SaaS paths a
 
 Add or extend:
 
-- `UserContextService` branch/client resolution.
-- Branch assignment validation service.
+- `UserContextService` institute/client resolution.
+- Institute assignment validation service.
 - `PermissionAuthorizationHandler` for Trust Admin, Institution Admin, SuperAdmin, Teacher, Accountant, Receptionist.
 - `SubscriptionService` activation, renewal, freeze, unfreeze, grace, overage, and audit transitions.
-- `RequireActiveBranchSubscriptionFilter` allowed/blocked API matrix.
+- `RequireActiveInstituteSubscriptionFilter` allowed/blocked API matrix.
 - Academic context validator for school/college/coaching/custom structures.
 - Syllabus version selection by board/university/course/effective year.
 - Syllabus override merge logic.
@@ -44,11 +44,11 @@ Add or extend:
 - Institution Admin can access only assigned institution.
 - Teacher can access only assigned institution/classes/batches.
 - Forged `X-Client-Id` is rejected.
-- Forged `X-Branch-Id` is rejected.
-- Null branch context does not leak branch data to normal users.
+- Forged `X-Institute-Id` is rejected.
+- Null institute context does not leak institute data to normal users.
 - Subscription create/activate/renew/freeze/unfreeze require correct permissions.
-- Frozen branch cannot access operational APIs.
-- Frozen/expired branch can access only allowed billing APIs.
+- Frozen institute cannot access operational APIs.
+- Frozen/expired institute can access only allowed billing APIs.
 - School academic setup: board/class/section/subject.
 - College academic setup: program/course/department/semester/CBCS subject offering.
 - Coaching setup: course/package/batch/module.
@@ -69,7 +69,7 @@ Add Playwright flows:
 - Institution Admin cannot switch outside assigned institution.
 - Direct URL access to unauthorized pages is blocked.
 - Sidebar hides unauthorized modules and route guard blocks direct navigation.
-- 402 subscription lock screen appears for frozen/expired branch.
+- 402 subscription lock screen appears for frozen/expired institute.
 - Billing-only pages remain accessible when operational pages are blocked.
 - Academic setup wizard for school.
 - Academic setup wizard for college.
@@ -78,7 +78,7 @@ Add Playwright flows:
 - Fee plan setup by institution type.
 - Student onboarding by institution type.
 - Form validation and server error display.
-- Empty states for no branches, no academic year, no subscription, no students.
+- Empty states for no institutes, no academic year, no subscription, no students.
 
 Mobile Flutter flows:
 
@@ -171,14 +171,14 @@ Minimum performance gates for pilot:
 - Common list endpoints must be paginated.
 - Dashboard APIs must complete within agreed SLA on seeded large data.
 - No unbounded export should run in request thread for very large datasets.
-- Query plans for high-volume tables must use tenant/branch/year indexes.
+- Query plans for high-volume tables must use tenant/institute/year indexes.
 
 ## Test Roadmap By Phase
 
 | Phase | Required tests before completion |
 |---|---|
 | Phase 0 | Config safety, subscription authorization, schema drift, SQL idempotency, forged header tests. |
-| Phase 1 | Trust isolation, institution isolation, branch assignment, direct API IDOR tests. |
+| Phase 1 | Trust isolation, institution isolation, institute assignment, direct API IDOR tests. |
 | Phase 2 | Academic context unit/integration tests for school, college, coaching, custom. |
 | Phase 3 | Syllabus version/import/override tests and seed idempotency tests. |
 | Phase 4 | Subscription lifecycle, freeze/402, overage, payment/renewal history tests. |
@@ -204,7 +204,7 @@ Mobile-specific phase gates:
 Do not start a paid pilot until:
 
 - All P0 tests pass in CI.
-- Tenant/branch isolation tests pass for SuperAdmin, Trust Admin, Institution Admin, staff, and student roles.
+- Tenant/institute isolation tests pass for SuperAdmin, Trust Admin, Institution Admin, staff, and student roles.
 - Subscription freeze/payment flows pass.
 - School, college, and coaching academic setup flows pass.
 - Manual SQL scripts can rebuild a fresh database.

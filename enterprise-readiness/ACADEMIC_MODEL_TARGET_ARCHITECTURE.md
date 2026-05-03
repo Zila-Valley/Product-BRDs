@@ -6,7 +6,7 @@ Date: 2026-05-03
 
 - Model the customer as a Trust/education group, not a school.
 - Model each school, college, coaching center, or training center as an institution.
-- Never overload physical institution branch with academic branch such as CSE or Mechanical.
+- Never overload physical institution with academic branch such as CSE or Mechanical.
 - Use one academic context abstraction across attendance, exams, timetable, fees, students, reports, and syllabus.
 - Keep school-specific concepts such as Class and Section, but do not force colleges and coaching institutes into them.
 - Allow custom institution-defined structures without losing reporting consistency.
@@ -37,7 +37,7 @@ Move institution-specific school fields such as board and affiliation out of Tru
 
 ### Institution
 
-Current likely source: `api/Modules/Academics/Entities/Branch.cs`
+Current likely source: `api/Modules/Academics/Entities/Institute.cs`
 
 Target meaning: one school, college, coaching institute, training center, medical college, pharmacy college, engineering college, or campus.
 
@@ -56,7 +56,7 @@ Recommended fields:
 - `SubscriptionStatus`
 - `Status`
 
-If the database keeps the name `BranchId` for compatibility, API and frontend should still expose it as institution where possible.
+If the database keeps the name `InstituteId` for compatibility, API and frontend should still expose it as institution where possible.
 
 ### InstitutionType
 
@@ -239,7 +239,7 @@ Recommended fields:
 
 ### AcademicBranch
 
-College branch/specialization. This must not be confused with physical institution branch.
+College branch/specialization. This must not be confused with physical institution.
 
 Examples:
 

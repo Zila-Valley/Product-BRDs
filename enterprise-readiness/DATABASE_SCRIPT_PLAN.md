@@ -53,14 +53,14 @@ However, the current database discipline is not enterprise-safe because:
 | Table | Modification |
 |---|---|
 | `Clients` | Clarify Trust-level fields; move school-specific fields out over time. |
-| `Branches` | Clarify as Institution; add institution type/affiliation metadata if not already present. |
+| `Institutes` | Clarify as Institution; add institution type/affiliation metadata if not already present. |
 | `Syllabuses` | Resolve `TemplateId`; add `InstitutionSyllabusPlanId` or migrate to new plan model. |
-| `TimeTables` | Separate physical institution ID from academic branch ID. |
+| `TimeTables` | Separate physical InstituteId from academic AcademicBranchId. |
 | `ExamSchedules` | Remove required school-only `ClassRoomId` dependency for non-school contexts. |
 | `FeeStructures` | Migrate toward `FeePlans`; avoid sentinel `Guid.Empty` semantics. |
 | `Subjects` | Link to global subject/subject offering model. |
 | `RolePermissions` | Add missing billing/academic/syllabus permissions. |
-| `BranchSubscriptions` or equivalent | Add grace/freeze/payment/renewal audit completeness if missing. |
+| `InstituteSubscriptions` or equivalent | Add grace/freeze/payment/renewal audit completeness if missing. |
 | `SchemaVersions` | Add checksum verification metadata and applied environment/user if absent. |
 
 ## Constraints Required
@@ -85,9 +85,9 @@ Add or verify:
 
 High-priority indexes:
 
-- `(ClientId, BranchId)` or `(TrustId, InstitutionId)` on every tenant/branch-scoped high-volume table.
-- `(ClientId, BranchId, AcademicYearId)` on students, attendance, fees, exams, timetable, syllabus.
-- `(BranchId, SubscriptionStatus, EndDate)` on subscription tables.
+- `(ClientId, InstituteId)` or `(TrustId, InstitutionId)` on every tenant/institute-scoped high-volume table.
+- `(ClientId, InstituteId, AcademicYearId)` on students, attendance, fees, exams, timetable, syllabus.
+- `(InstituteId, SubscriptionStatus, EndDate)` on subscription tables.
 - `(AcademicYearId, ClassId, SectionId)` for school operational tables.
 - `(AcademicYearId, ProgramId, CourseId, AcademicBranchId, TermId, BatchId)` for college/coaching operational tables.
 - `(StudentId, AcademicYearId)` on fee, attendance, exam result tables.
@@ -107,10 +107,10 @@ Use the existing numeric order after `009_add_trust_name_to_clients.sql`.
 | `014_subject_offerings.sql` | Add subject offering model and indexes. |
 | `015_syllabus_versions_and_nodes.sql` | Add syllabus versions and normalized tree. |
 | `016_institution_syllabus_plans_and_overrides.sql` | Add import/customization model. |
-| `017_exam_timetable_academic_context.sql` | Add clear academic-context columns and migrate from overloaded branch/class assumptions. |
+| `017_exam_timetable_academic_context.sql` | Add clear academic-context columns and migrate from overloaded institute/class assumptions. |
 | `018_fee_plans_unified_academic_context.sql` | Add unified fee plans and migration bridge from fee structures. |
 | `019_subscription_hardening.sql` | Add missing snapshots, overage, audit fields, and constraints. |
-| `020_tenant_branch_scale_indexes.sql` | Add high-volume tenant/branch/year indexes. |
+| `020_tenant_branch_scale_indexes.sql` | Add high-volume tenant/institute/year indexes. |
 | `021_user_institution_assignments.sql` | Add explicit user-institution access table if current role/user model is insufficient. |
 | `022_cleanup_legacy_school_only_columns.sql` | Carefully deprecate or move school-only fields after compatibility window. |
 
@@ -151,7 +151,7 @@ After applying a script:
 - Verify `SchemaVersions` row exists with checksum.
 - Verify expected columns, constraints, and indexes.
 - Run schema/entity drift test.
-- Run tenant/branch isolation tests.
+- Run tenant/institute isolation tests.
 - Run critical workflow smoke tests.
 
 ## CI Checks To Add
