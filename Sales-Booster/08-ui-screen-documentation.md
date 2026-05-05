@@ -28,6 +28,23 @@ This document inventories the frontend React screens (pages) available in the Sa
 | `/categories` | Categories Page | Manage product categories. | Yes | Implemented |
 | `/product` | Product Page | Manage product catalog. | Yes | Implemented |
 
+## Mobile Screen Inventory (React Native)
+
+| Route / Screen | Purpose | APIs Used | Auth Required | Status |
+|---|---|---|---|---|
+| `Home` (Tabs) | Dashboard, quick actions, attendance status. | Dashboard, Attendance | Yes | Implemented |
+| `Leads` (Tabs) | View assigned leads. | `/api/leads` | Yes | Implemented |
+| `Sales` (Tabs) | View sales records. | `/api/sales` | Yes | Implemented |
+| `Collections` (Tabs) | View payment collections. | `/api/salecollections`| Yes | Implemented |
+| `Report` (Tabs) | View analytics. | Reporting APIs | Yes | Implemented |
+| `AddLeadScreen` | Capture a new lead on the go. | `/api/leads` | Yes | Implemented |
+| `AddSaleScreen` | Record a new sale transaction. | `/api/sales` | Yes | Implemented |
+| `AddExpenseScreen`| Log travel or miscellaneous expenses. | `/api/expense` | Yes | Implemented |
+| `AttendanceScreen`| Check in/out using GPS and Camera. | `/api/attendance` | Yes | Implemented |
+| `Messages` | Internal chat interface. | SignalR | Yes | Implemented |
+| `Profile` | User settings, Salary, Tracking Logs. | Profile APIs | Yes | Implemented |
+| `Login` | Mobile app authentication. | `/api/Auth/login` | No | Implemented |
+
 ## Common Screen States
 
 ### 1. Loading State

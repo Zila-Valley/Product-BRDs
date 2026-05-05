@@ -42,7 +42,8 @@ Roles are managed dynamically via the `ApplicationRole` entity, however, implied
 - Global Exception handling and logging (Serilog).
 - Integration stubs (WhatsApp Webhook, Email Sender - Mailgun/SendGrid, SMS - Msg91).
 
-## Existing Frontend Screens (React + Vite)
+## Existing Frontend & Mobile Screens
+**Web (React + Vite)**:
 - Authentication: Login, Signup, Forgot Password, Reset Password.
 - Dashboard: Main analytics dashboard and specific attendance tracking map.
 - Administration: Users, RBAC (Roles, Modules, Permissions), Settings.
@@ -52,6 +53,11 @@ Roles are managed dynamically via the `ApplicationRole` entity, however, implied
 - Expense & Travel: Expense List, Expense Types.
 - Communication: Messaging Layout, My Messages.
 - System Logs: Exception Logs, Job Logs.
+
+**Mobile (React Native / Expo)**:
+- Bottom Tabs: Home, Leads, Sales, Collections, Report.
+- Quick Actions: Check-In/Out (with Camera/GPS), Add Lead, Add Sale, Add Expense.
+- Sub-screens: Chat/Messages, Profile, Salary, Leave Request, App Tracking Logs.
 
 ## Current Technical Stack
 **Backend**:
@@ -64,12 +70,19 @@ Roles are managed dynamically via the `ApplicationRole` entity, however, implied
 - Serilog for Logging
 - AutoMapper for DTO mapping
 
-**Frontend**:
+**Frontend (Web)**:
 - React 18+ (with Vite)
 - React Router DOM
 - TailwindCSS (implied by typical Vite setups, and `.env` configs)
 - Axios for API calls
 - State Management: Context API / Local State
+
+**Frontend (Mobile)**:
+- React Native (Expo SDK 54)
+- Expo Router for navigation
+- NativeWind for styling
+- AsyncStorage for JWT persistence
+- Expo Location & Expo Notifications
 
 ## Current Gaps and Risks
 - **Testing**: No visible automated test suites (Unit or Integration tests) in the standard project structure.

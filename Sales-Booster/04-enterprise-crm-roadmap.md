@@ -16,6 +16,7 @@ This roadmap outlines the strategic phases to evolve the Sales Booster CRM from 
 
 - **Lead Assignment Engine**: Implement round-robin and rules-based automatic lead assignment to sales reps based on zip code or business unit.
 - **Follow-up & Reminder System**: Dedicated Follow-up module. Sales reps can log calls/meetings and schedule next contact. Hangfire jobs send automated email/SMS reminders 1 hour before the follow-up.
+- **Mobile Offline Sync**: Introduce SQLite caching and a sync queue to the React Native app, enabling agents to capture leads without internet.
 - **Lead Timeline View**: Enhance the frontend Lead Details page to show a chronological timeline of all activities, chats, and status changes related to the lead.
 - **CSV Data Import**: Build a robust, mapped CSV upload feature for importing bulk lead lists.
 
@@ -40,6 +41,7 @@ This roadmap outlines the strategic phases to evolve the Sales Booster CRM from 
 - **Dynamic Report Builder**: Allow users to drag-and-drop columns to build custom reports and export them.
 - **Lead Scoring**: Simple rule-based scoring (e.g., +10 points if email opened) to help reps prioritize hot leads.
 - **Sales Forecasting Dashboards**: Predict monthly revenue based on weighted Deal pipeline probability.
+- **Mobile Route Optimization**: Calculate and display the most optimal daily route mapping in the mobile app for scheduled client visits.
 
 ## Phase 6: Enterprise SaaS Readiness (Months 11-12)
 **Objective**: Prepare the platform for multi-tenant SaaS commercialization.

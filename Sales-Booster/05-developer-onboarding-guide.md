@@ -12,6 +12,8 @@ Ensure you have the following installed on your machine:
 - [SQL Server](https://www.microsoft.com/en-us/sql-server/sql-server-downloads) (Developer/Express) or Docker for a SQL Server container
 - SQL Server Management Studio (SSMS) or Azure Data Studio
 - [Visual Studio 2022](https://visualstudio.microsoft.com/) or JetBrains Rider or VS Code
+- [Expo CLI](https://docs.expo.dev/) (for Mobile App development)
+- Android Studio / Xcode (for running mobile emulators)
 
 ## 3. Backend Setup Steps
 1. Navigate to the `/api` folder.
@@ -19,10 +21,16 @@ Ensure you have the following installed on your machine:
 3. Open `appsettings.Development.json` (or `appsettings.json`) and configure your `DefaultConnection` string to point to your local SQL Server.
 4. Run `dotnet restore` to install NuGet packages.
 
-## 4. Frontend Setup Steps
+## 4. Frontend (Web) Setup Steps
 1. Navigate to the `/web` folder.
 2. Run `npm install` to install node modules.
 3. Open `.env.development` and ensure `VITE_API_BASE_URL` points to your local .NET API URL (usually `http://localhost:5000` or `https://localhost:5001`).
+
+## 4.1 Mobile App Setup Steps
+1. Navigate to the `/mobile` folder.
+2. Run `npm install` to install dependencies.
+3. Edit `app.config.js` or `.env` to ensure `apiUrl` points to your local machine IP (e.g., `http://192.168.1.X:5000` - do NOT use localhost as physical devices/emulators cannot resolve it to the host machine).
+4. Run `npm start` or `npx expo start` to launch the Expo bundler.
 
 ## 5. Database Setup
 The project uses Entity Framework Core Code-First migrations.

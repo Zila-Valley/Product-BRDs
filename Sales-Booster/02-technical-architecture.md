@@ -1,7 +1,7 @@
 # Technical Architecture Document
 
 ## 1. Solution Overview
-Sales Booster CRM is architected as a modular monolith. It utilizes a layered approach within a single .NET Core API project for backend operations, and a React SPA (Single Page Application) for the frontend. Real-time features are powered by SignalR, and background tasks are orchestrated using Quartz.NET and Hangfire.
+Sales Booster CRM is architected as a modular monolith. It utilizes a layered approach within a single .NET Core API project for backend operations, a React SPA (Single Page Application) for the web frontend, and a React Native (Expo) Mobile App for field agents. Real-time features are powered by SignalR, and background tasks are orchestrated using Quartz.NET and Hangfire.
 
 ## 2. Technology Stack
 **Backend:**
@@ -15,13 +15,20 @@ Sales Booster CRM is architected as a modular monolith. It utilizes a layered ap
 - PDF Generation: QuestPDF
 - Mapping: AutoMapper
 
-**Frontend:**
+**Frontend (Web):**
 - Framework: React 18
 - Build Tool: Vite
 - Routing: React Router DOM v6
 - UI Libraries: TailwindCSS (implied)
 - API Client: Axios (configured via `axiosInstance.js`)
 - State Management: React Context API (`PermissionsContext`) + Local State
+
+**Frontend (Mobile):**
+- Framework: React Native (Expo SDK 54)
+- Routing: Expo Router (File-based routing)
+- UI/Styling: NativeWind, React Native Paper
+- API Client: Custom Fetch Wrapper (`ApiService.ts`)
+- Storage & Features: AsyncStorage, Expo Location, Expo Notifications
 
 ## 3. Current Folder Structure
 
@@ -42,6 +49,12 @@ Sales Booster CRM is architected as a modular monolith. It utilizes a layered ap
 - `/pages` - Route-level components grouped by feature (Auth, Settings, RBAC, etc.).
 - `/services` - Axios wrappers for backend API endpoints.
 - `/utils` - Utility functions (`auth.js`, `utils.js`).
+
+### Mobile (`/mobile`)
+- `/app` - Expo Router configuration (tabs, stacks).
+- `/features` - Core logic separated by domain (e.g., `auth`, `lead`, `home`).
+- `/services` - API fetch wrappers and refresh token logic.
+- `/utils` - Helpers for device features (location, selfie).
 
 ## 4. Backend Architecture
 The backend follows a standard N-Tier architecture (Controller -> Service -> Repository -> Database).

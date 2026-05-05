@@ -37,8 +37,9 @@ This document compares the current implementation of Sales Booster CRM against s
 | 29. API Documentation | Swagger. | Implemented. | Implemented | None. | Low | N/A |
 | 30. Testing | Automated Unit/Integration tests. | Missing from standard folders. | Missing | High risk of regression bugs. | Critical | Implement xUnit test project. |
 | 31. Deployment Readiness | CI/CD pipelines. | Dockerfiles exist. CI/CD scripts missing. | Partially Implemented | Manual deployments. | Medium | Add GitHub Actions / Azure DevOps pipelines. |
-| 32. Mobile Responsiveness | React frontend responsiveness. | Assumed handled by Tailwind. | Implemented | Complex tables may break on mobile. | Medium | Verify table layouts on mobile devices. |
+| 32. Mobile Responsiveness | React frontend responsiveness. Dedicated Mobile App. | Dedicated Mobile App via React Native. | Implemented | None. | Low | N/A |
 | 33. Multi-tenant/SaaS Readiness | Isolate data per tenant. | `BusinessUnitId` and `ClientId` exist. | Partially Implemented | Not fully abstracted via Global Query Filters. | High | Enforce EF Core Global Query Filters for `ClientId`. |
+| 34. Offline Capabilities | Field workers can use app without internet. | Mobile app relies on live API. | Missing | No sync queue for offline data entry. | High | Add SQLite and Sync Queue to Mobile App. |
 
 ## Detailed Missing Features
 

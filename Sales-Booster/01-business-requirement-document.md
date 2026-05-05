@@ -5,7 +5,7 @@
 - **Product Name**: Sales Booster CRM
 - **Version**: 1.0
 - **Prepared For**: Internal Product and Implementation Team
-- **Technology**: .NET Core 8 API + React Vite frontend
+- **Technology**: .NET Core 8 API + React Vite Web + React Native (Expo) Mobile App
 
 ### 2. Executive Summary
 Sales Booster CRM is a comprehensive software platform designed to manage end-to-end sales processes, employee attendance, field-force tracking, and basic HR workflows. It solves the business problem of fragmented sales tracking, lack of visibility into field employee movement, and unstructured customer follow-ups. The target users are sales teams, field service agents, HR managers, and business owners. It provides business value by offering a unified view of organizational performance and boosting sales team productivity.
@@ -43,13 +43,14 @@ Sales Booster CRM is a comprehensive software platform designed to manage end-to
 
 **Assumptions:**
 - The chat system is meant to replace third-party tools like Slack/WhatsApp for internal teams.
-- Field agents use mobile browsers or web-views (since geo-tracking and selfie check-ins are present).
+- Field agents heavily rely on the Mobile App for daily check-ins (GPS/Selfie) and quick logging of Leads/Sales.
 
 **Missing Areas (Compared to full CRM):**
 - Pipeline/Deal Management (Kanban view, Deal Stages).
 - Built-in Quote & Invoice generation.
 - External Email/Calendar sync (GSuite/O365 integration).
 - Automated Drip Campaigns or Marketing Automation.
+- Offline Sync capability in the Mobile App for remote areas.
 
 ### 7. Functional Requirements Module-wise
 

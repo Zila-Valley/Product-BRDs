@@ -11,10 +11,15 @@ Sales Booster CRM is a platform that helps you track your prospective customers 
 - **Admins**: To set up the system, manage user roles, and define business units.
 
 ## 3. Login Process
+**Web Portal:**
 1. Navigate to the CRM URL provided by your administrator.
 2. Enter your registered **Email** and **Password**.
 3. Click **Login**.
-4. You will be redirected to the Dashboard.
+
+**Mobile App:**
+1. Download the App and open it on your Android or iOS device.
+2. Enter your Email and Password on the Login screen.
+3. Your session will be saved securely for quick access in the future.
 
 ## 4. Dashboard Overview
 The Dashboard gives you a quick snapshot of your performance. 
@@ -43,11 +48,18 @@ The Dashboard gives you a quick snapshot of your performance.
 4. Save the changes. The lead will now appear in that employee's dashboard.
 
 ## 8. How to Mark Attendance (Check-in/Out)
+**Via Mobile App (Recommended):**
+1. Open the Mobile App and navigate to the **Home** tab.
+2. Click **Check-In**.
+3. Allow the app to access your **Location** and **Camera**.
+4. Snap a selfie to verify your identity. The app will capture your GPS coordinates.
+5. You can view your check-in history in the Tracking Logs.
+
+**Via Web Portal:**
 1. Go to the **Attendance** section.
 2. Click **Check-In**.
-3. **Important**: Your browser/device will ask for Location and Camera permissions. You **must** allow these for a successful check-in.
-4. The system will capture your GPS location and time.
-5. At the end of the day, return to this screen, optionally provide an **EOD Work Update** (End of Day report), and click **Check-Out**.
+3. Allow location access in your browser.
+4. At the end of the day, return to this screen, optionally provide an **EOD Work Update** (End of Day report), and click **Check-Out**.
 
 ## 9. How to Manage Sales & Collections
 1. Once a lead is converted, go to **Sales**.

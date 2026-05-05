@@ -31,6 +31,7 @@ Understand *how* the product is built under the hood.
 2. [Database Documentation](09-database-documentation.md)
 3. [API Documentation](07-api-documentation.md)
 4. [UI Screen Documentation](08-ui-screen-documentation.md)
+5. [Mobile App Documentation](11-mobile-app-documentation.md)
 
 ### 4. Team Onboarding & Operations
 Guides for new developers, QA, and end-users.

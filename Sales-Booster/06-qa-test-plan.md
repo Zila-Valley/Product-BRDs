@@ -20,11 +20,13 @@ To ensure that Sales Booster CRM functions as per the business requirements, is 
 | TC-02 | Auth | Invalid Login | 1. Enter invalid pwd. 2. Click Login. | "Invalid credentials" error displayed. | High |
 | TC-03 | Leads | Create Lead | 1. Go to Leads. 2. Click Add. 3. Fill required fields. 4. Save. | Lead appears in list. DB updated. | High |
 | TC-04 | Leads | Required Validation | 1. Leave Name blank. 2. Save. | Validation error on Name field. | Medium |
-| TC-05 | Attendance | Daily Check-in | 1. Click Check-in. 2. Allow Location. | Check-in successful. Coords saved. | High |
+| TC-05 | Attendance | Daily Check-in (Mobile) | 1. Open app. 2. Click Check-in. 3. Allow Location & Camera. | Check-in successful. Coords and selfie saved. | High |
 | TC-06 | Attendance | Selfie Verification | 1. Attempt Check-in without camera permission. | Check-in blocked until camera allowed. | Medium |
 | TC-07 | Sales | Add Sale | 1. Select Client/Lead. 2. Enter Amount. 3. Save. | Sale recorded. Target progress updated. | High |
 | TC-08 | Chat | Send Message | 1. Open Workspace. 2. Type msg. 3. Send. | Message appears immediately for receiver. | High |
 | TC-09 | Chat | Attach File | 1. Select File. 2. Send. | File uploads successfully, accessible via link. | Medium |
+| TC-10 | Mobile | Background Location | 1. Check in. 2. Minimize app. | App continues to track background location reliably. | High |
+| TC-11 | Mobile | Token Refresh | 1. Let token expire. 2. Open app. | User remains logged in; `ApiService` seamlessly refreshes token. | High |
 
 ## 5. API Test Scenarios
 - Verify all endpoints return `401 Unauthorized` when called without a valid JWT.
