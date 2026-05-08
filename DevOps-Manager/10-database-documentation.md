@@ -2,13 +2,30 @@
 
 ## Current Database Usage
 The backend uses Entity Framework Core with `Npgsql` to connect to a shared PostgreSQL instance. 
-Existing tables discovered via the Service/Repository layers:
+Existing tables registered and utilized via the Service/Repository layers:
 - Identity tables (`Users`, `Roles`, `UserRoles`)
 - Location tables (`Countries`, `States`, `Districts`)
 - Project tables (`Projects`, `ProjectServices`)
-- Log tables (`DeploymentLogs`, `ExceptionLogs`, `JobExecutionLogs`)
+- Log tables (`DeploymentLogs`, `ExceptionLogs`, `JobExecutionLogs`, `BackupLogs`)
 
-*Critical Note: `DatabaseController.cs` attempts to execute SQL Server commands (`BACKUP DATABASE`) instead of `pg_dump` on this PostgreSQL database. This is a severe architectural gap.*
+## Database & Backup Logs Schema - [FULLY IMPLEMENTED]
+
+The backup logging system tracks snapshots for both PostgreSQL databases and Docker mapped uploads directories dynamically using an EF Core entity model (`BackupLog`).
+
+### 1. `BackupLogs` Entity Schema
+| Field | Type | Description |
+|---|---|---|
+| **Id** | `Guid` (PK) | Unique record identifier |
+| **FileName** | `string` (Required) | Physical filename on disk (e.g. `DevOpsDB_manual_20260507.dump`) |
+| **FilePath** | `string` (Required) | Absolute path to backup file on server disk |
+| **DatabaseName** | `string` (Required) | Source database name (e.g. `DevOpsDB`) or upload block identifier (e.g. `uploads (DevOpsDB)`) |
+| **SizeBytes** | `long` | Size of the snapshot file on disk in bytes |
+| **BackupType** | `string` | Type of backup: `Database` or `Uploads` |
+| **SourceType** | `string` | Origin of trigger: `Manual` (direct download/restore) or `Scheduled` (nightly background cron runs) |
+| **Status** | `string` | Snapshot health state: `Success` or `Failed` |
+| **CreatedAt** | `DateTime` | Generation timestamp in India Standard Time (IST) |
+
+---
 
 ## Proposed Database Schema for DevOps Manager
 
@@ -41,8 +58,6 @@ Existing tables discovered via the Service/Repository layers:
   - `Id`, `ProductEnvironmentId`, `ImageTag`, `CreatedAt`.
 - **BackupJobs**:
   - `Id`, `DatabaseName`, `TriggeredBy`, `Status`, `CreatedAt`.
-- **BackupFiles**:
-  - `Id`, `BackupJobId`, `FilePath`, `FileSizeMB`, `RetentionExpiryDate`.
 - **RestoreRequests**:
   - `Id`, `BackupFileId`, `RequestedBy`, `ApprovedBy`, `Status`, `RestoredAt`.
 

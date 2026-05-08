@@ -20,27 +20,32 @@ This document compares the current implementation of the DevOps Manager against 
 | **Container/Volume Pruning** | Partial (Global prune only) | Medium | Disk space exhaustion | Medium | P2 |
 | **Disk Usage Dashboard** | Exists (`MonitoringController`) | High | - | Low | - |
 | **CPU/RAM Usage** | Exists | Medium | - | Low | - |
-| **PostgreSQL Backup** | **Broken** (Uses SQL Server) | Critical | Data Loss | Medium | P0 |
-| **PostgreSQL Restore** | **Broken** (Uses SQL Server) | Critical | Data Loss | Medium | P0 |
-| **Manual Backup Download** | **Broken** | High | Data Loss | Low | P0 |
-| **Backup Scheduling** | **Missing** | High | Data Loss | Medium | P1 |
-| **Backup Retention Policy** | **Missing** | Medium | Disk Exhaustion | Low | P2 |
+| **PostgreSQL Backup** | **Resolved & Completed** | Critical | - | Medium | - |
+| **PostgreSQL Restore** | **Resolved & Completed** | Critical | - | Medium | - |
+| **Manual Backup Download** | **Resolved & Completed** | High | - | Low | - |
+| **Backup Scheduling** | **Resolved & Completed** (Cron via Quartz) | High | - | Medium | - |
+| **Backup Retention Policy** | **Resolved & Completed** (Rolling 7-day policy) | Medium | - | Low | - |
+| **Uploads Volume Backup** | **Resolved & Completed** (ZIP compression & restore) | High | - | Medium | - |
 | **Environment Variable Management** | **Missing** | High | Hardcoded secrets on server | High | P1 |
 | **Secrets Management** | **Missing** | High | Security vulnerability | High | P1 |
 | **SSL/Domain Status** | **Missing** | Medium | Expired certificates | Medium | P3 |
 | **Health Check Endpoints** | Exists internally | Medium | - | Low | - |
 | **Product Uptime Monitoring** | **Missing** | Medium | Unnoticed downtime | Medium | P2 |
 | **Notification System** | **Missing** | Medium | Delayed incident response | Medium | P2 |
-| **Audit Logs** | **Missing** (Only deploys logged) | High | Lack of accountability | Medium | P1 |
+| **Audit Logs** | **Resolved & Completed** (Full backup logs in DB) | High | Lack of accountability | Medium | P1 |
 | **RBAC** | Exists (Basic) | High | - | Low | - |
 | **Approval Workflow for PROD**| **Missing** | High | Accidental PROD disruptions | High | P1 |
 | **Maintenance Mode** | **Missing** | Medium | Poor user experience during DB migration | Low | P2 |
 
-## Critical Gaps Details
+## Critical Gaps Details & Resolution Status
 
-### 1. Database Backup/Restore is Broken (P0)
-**Issue**: The backend uses Entity Framework Core with `Npgsql` (PostgreSQL), but the `DatabaseController.cs` attempts to execute `BACKUP DATABASE` using `Microsoft.Data.SqlClient`. This code was copied from an MSSQL project and will instantly fail.
-**Fix**: Rewrite `DatabaseController.cs` to use `pg_dump` and `pg_restore` via `Process.Start`.
+### 1. Database Backup/Restore & Uploads Storage (P0) - [RESOLVED]
+**Status**: **Fully Completed**
+* **PostgreSQL pg_dump Integration**: Replaced SQL Server dialect commands with a native PostgreSQL engine backup workflow using `pg_dump` and `pg_restore`.
+* **Upload Volumes Support**: Created zip archiving/extraction algorithms (`System.IO.Compression.ZipFile`) to support full-folder compressed package creation and on-server extraction. This supports isolated uploads mappings such as `/home/tmk/data/salesbooster/uploads:/app/wwwroot/uploads` safely.
+* **Storage-to-Database Sync**: Persisted backups in a dedicated PostgreSQL database log repository with a synchronization mechanism to sync pre-existing physical disk files on controller scan initialization.
+* **Cron Expression Scheduler & Quartz Config**: Integrated native `Quartz` scheduler library to support customizable cron validation, dynamic sleep delay overrides, and a linked `CancellationTokenSource` interrupt engine for trigger-on-demand background jobs.
+* **Automatic 7-Day Retention Sweep**: Programmed automated disk scans to clean logs and delete snapshots older than 7 calendar days to prevent Hostinger VPS disk space exhaustion.
 
 ### 2. Container Log Viewing (P0)
 **Issue**: Developers currently cannot see why a container crashed without SSHing into the host.

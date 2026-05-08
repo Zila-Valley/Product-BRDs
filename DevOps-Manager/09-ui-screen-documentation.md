@@ -9,8 +9,9 @@ The DevOps specific screens found:
 3. **`Project`**: Manages logical projects.
 4. **`ProjectService`**: Maps environments (UAT/PROD) and container names to Projects.
 5. **`Deploy`**: UI for triggering `POST /api/Deploy/execute`.
+6. **`Database`**: Fully resolved and integrated backup, restore, scheduled cron and upload volumes manager.
 
-## Proposed New Screens
+## Proposed New Screens & Completed Screens
 
 ### 1. Dashboard (Revamped)
 - **Purpose**: High-level overview of the VPS.
@@ -35,12 +36,23 @@ The DevOps specific screens found:
 - **Logs View**: A dark-themed terminal-like `<pre>` block showing the last 500 log lines with a search bar.
 - **API**: `GET /api/Containers/{serviceId}/logs`.
 
-### 5. PostgreSQL Backup & Restore
-- **Purpose**: Manage database snapshots.
-- **Fields/Elements**: List of existing backups with dates and sizes.
-- **Buttons**: `Generate New Backup`, `Download`, `Restore`.
-- **Restore Workflow**: Clicking Restore opens a modal requiring the user to type "RESTORE-DB-NAME" to confirm.
-- **API**: `/api/Database/backup`, `/api/Database/restore`.
+### 5. PostgreSQL & Uploads Volume Backup Manager - [COMPLETED]
+- **Purpose**: Unified interface to manage PostgreSQL database schemas, isolated docker container mapped upload volumes, and rolling backup schedules.
+- **Visual Presentation**: Styled with ultra-premium glassmorphism, featuring a tab-navigated selector for "Database Snapshots" vs "Upload Volume Folders".
+- **Interactive Scheduled Backups Banner**:
+  - Displays a dynamic pulse status tracker (Emerald for Active/Idle, Amber for Backup Job Running).
+  - Shows the next calculated IST timeout run date/time based on the parsed Cron syntax.
+  - Includes a quick-configure **Edit Schedule** button that launches a Cron preset manager.
+  - Features an on-demand **Trigger Scheduled Now** action button to manually execute a full-system snapshot run in the background.
+- **Cron Configuration presets Modal**:
+  - Quick-preset selection buttons (Nightly at 02:00 AM, Midnight, Noon, or Every 12 Hours).
+  - Custom Quartz expression input field with syntax explanations.
+- **Backups Inventory History List**:
+  - Shows file name, environment/service identifier, snapshot size (formatted to MB), date of creation (with "days ago" relative formatting), and backup type.
+  - Action buttons: download from server, execute restore with safety protection shields, and delete from server.
+- **Safety Overwrite Confirmation Prompt**:
+  - Restoring a backup displays a red "Enterprise Overwrite Shield" modal requiring the user to check an acknowledgment checkbox and type the target database/uploads name as an explicit safeguard.
+- **APIs Used**: `/api/Database/*` endpoints (backups list, download, delete, restore, uploads, cron config, cron trigger).
 
 ### 6. Cleanup Center
 - **Purpose**: Manage VPS disk space.

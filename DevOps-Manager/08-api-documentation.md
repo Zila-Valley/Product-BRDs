@@ -35,11 +35,53 @@
   - **Auth**: Required (`SuperAdmin` role).
   - **Response**: `{ "output": "string" }`
 
-### 3. Database API
+### 3. Database & Upload Backup API
+- **`GET /api/Database/backups`**
+  - **Purpose**: Get all persisted backup log metadata (from db logs, synced from disk automatically if db is empty).
+  - **Auth**: Required (`SuperAdmin` or `DevOpsAdmin` role).
+  - **Response**: List of `BackupFileDto` including details such as type (Database or Uploads), size, date, status, database/service identifier, and filePath.
+- **`GET /api/Database/backups/download-file`**
+  - **Purpose**: Downloads a specific database snapshot `.dump` or uploads folder backup `.zip` file stored on the server disk.
+  - **Query Params**: `fileName` (string), `type` ("Database" or "Uploads").
+  - **Response**: File stream (binary blob).
+- **`DELETE /api/Database/backups`**
+  - **Purpose**: Permanently deletes a backup file from the server disk and cleans up its record in the PostgreSQL database logging table.
+  - **Query Params**: `fileName` (string), `type` ("Database" or "Uploads").
+  - **Response**: Success status confirmation.
+- **`POST /api/Database/backups/restore-file`**
+  - **Purpose**: Restores a database or uploads directory to a previous state using a backup snapshot existing on the server.
+  - **Request Body**: `{ "fileName": "string", "type": "string", "serviceId": "guid?" }`
+  - **Response**: Success/Failure status report.
+
 - **`GET /api/Database/backup/download`**
-  - **Purpose**: Generates and downloads a `.bak` file. *(Note: Currently implemented for SQL Server, must be fixed for PostgreSQL)*.
+  - **Purpose**: Generates a live PostgreSQL backup using `pg_dump` on the host, creates database logs, and streams the `.dump` file binary back to the client immediately.
+  - **Query Params**: `serviceId` (optional GUID to backup a specific microservice database, defaults to Central DevOpsDB if null).
+  - **Response**: File binary stream.
 - **`POST /api/Database/restore/upload`**
-  - **Purpose**: Uploads and restores a database backup. *(Note: Currently implemented for SQL Server)*.
+  - **Purpose**: Uploads a `.dump` binary snapshot and restores it onto the PostgreSQL database using `pg_restore`.
+  - **Request Body**: Multi-part Form Data (`File` containing dump file, `ServiceId` optional GUID).
+  - **Response**: Success/Failure status report.
+
+- **`GET /api/Database/uploads/backup/download`**
+  - **Purpose**: Compresses any custom service uploads folder (or host directory mapped to a container, e.g., `/app/wwwroot/uploads`) into a `.zip` file on-the-fly and downloads it.
+  - **Query Params**: `serviceId` (optional GUID to back up a specific container uploads path, defaults to Central DevOps uploads folder).
+  - **Response**: Compressed ZIP binary stream.
+- **`POST /api/Database/uploads/restore/upload`**
+  - **Purpose**: Restores a compressed `.zip` directory structure back to the specified service uploads path, clearing existing files first for consistency.
+  - **Request Body**: Multi-part Form Data (`file` containing zip file, `serviceId` optional GUID).
+  - **Response**: Extraction success status report.
+
+### 4. Backup Scheduling & Trigger API
+- **`GET /api/Database/cron/config`**
+  - **Purpose**: Retrieves the current automated nightly schedule settings, including the Quartz Cron expression, the next calculated IST run time, and whether the service is actively executing in the background.
+  - **Response**: `{ "cronExpression": "0 0 2 * * ?", "nextRunTime": "2026-05-09T02:00:00Z", "isExecuting": false }`
+- **`POST /api/Database/cron/config`**
+  - **Purpose**: Configures a new Quartz Cron schedule for automated nightly backups, validates the expression format, writes to persistence, and restarts the background delay immediately.
+  - **Request Body**: `{ "cronExpression": "0 0 2 * * ?" }`
+  - **Response**: Updated configurations and next scheduled IST run time.
+- **`POST /api/Database/cron/trigger`**
+  - **Purpose**: Triggers a manual, immediate scheduled backup run in the background (databases + zips), bypassing the current sleep interval.
+  - **Response**: Confirmation message of background job initialization.
 
 ---
 
