@@ -244,9 +244,9 @@ Primary matrix connecting students, classes, sections, and subjects.
 
 ```mermaid
 erDiagram
-    BRANCH ||--o{ CLASS : "contains"
-    CLASS ||--o{ SECTION : "splits into"
-    CLASS ||--o{ SUBJECT : "has"
+    BRANCH ||--o{ CLASS_RECORD : "contains"
+    CLASS_RECORD ||--o{ SECTION : "splits into"
+    CLASS_RECORD ||--o{ SUBJECT : "has"
     
     TEACHER ||--o{ SECTION : "manages (Class Teacher)"
     TEACHER ||--o{ TIMETABLE : "assigned to"
