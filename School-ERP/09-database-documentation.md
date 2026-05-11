@@ -308,3 +308,51 @@ To ensure quick retrieval and maintain referential integrity under heavy multi-t
    Referential cascade rules are configured using Fluent API configurations within `OnModelCreating` in `ApplicationDbContext.cs`:
    * **`DeleteBehavior.Restrict`** is applied to prevent parent entities from deleting active database configurations (such as standard Classes, Fee Heads, or Leave Types) if transactional student records exist.
    * **`DeleteBehavior.Cascade`** is applied only for child tables (such as `RolePermission` or `VoucherEntry`) where records have no logical purpose without their parent.
+
+---
+
+## 5. Database Migrations & Version Control
+
+To manage database evolution safely across development, testing, and production environments, the platform uses **Entity Framework Core (EF Core) Migrations** targeting PostgreSQL. 
+
+### 5.1 Architecture & Consolidation
+Database migrations are consolidated into a single folder within the Persistence module:
+* **Directory**: [api/Persistence/Migrations/](file:///d:/tmk-computers/products/school/api/Persistence/Migrations/)
+* **Namespace**: `SchoolErp.Persistence.Migrations`
+* **Consolidation**: Legacy development migration steps have been squashed into a single, unified initial migration file (`20260511062800_InitialCreate.cs`) along with its snapshot (`ApplicationDbContextModelSnapshot.cs`). This ensures that brand-new environments (such as fresh local Docker containers) can spin up and construct the complete, correct database schema in a single pass.
+
+### 5.2 Application Startup execution
+The API is configured to apply migrations on startup. Inside [Program.cs](file:///d:/tmk-computers/products/school/api/Program.cs):
+1. On start, the host resolves [ApplicationDbContext](file:///d:/tmk-computers/products/school/api/Persistence/ApplicationDbContext.cs).
+2. It invokes `await context.Database.MigrateAsync()`.
+3. If the connection fails (e.g. during a fresh Docker Compose boot where PostgreSQL is still starting up), the exception is **re-thrown**. This causes the API container to exit safely. Since the container uses `restart: always` inside the [docker-compose.local.yml](file:///d:/tmk-computers/products/school/api/docker-compose.local.yml), Docker automatically restarts the API. Once PostgreSQL is ready, the migration successfully executes and the app begins seeding master data.
+
+### 5.3 Safe Production Transition Strategy (Migration Faking)
+Because we have consolidated all older migrations into a single, new `InitialCreate` migration, deploying this container to an existing production database with real client data would normally crash-loop on startup (as PostgreSQL will throw an error when the new migration attempts to recreate tables that already exist).
+
+To safely deploy this consolidated migration model **without** affecting or corrupting client data, use the **Migration Faking** technique.
+
+#### Step-by-Step Production Release Guide:
+1. **Take a Database Backup** (Best practice):
+   ```bash
+   pg_dump -U postgres -h <prod_host> -d SchoolErpDB > prod_backup_before_squash.sql
+   ```
+2. **Fake the Migration in Production**:
+   Run the following SQL on your production database using pgAdmin, psql, or any query tool. This clears out references to old, obsolete migration files and registers our new consolidated migration as "already applied":
+   ```sql
+   -- 1. Remove references to old, split migrations
+   DELETE FROM "__EFMigrationsHistory";
+
+   -- 2. Insert the single consolidated migration as "applied"
+   INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+   VALUES ('20260511062800_InitialCreate', '10.0.3');
+   ```
+3. **Deploy the updated API**:
+   Deploy the new container stack. Upon start, the API will query the database history, find `20260511062800_InitialCreate` already marked as applied, bypass the table recreation entirely, and start up safely without touching any client data.
+
+### 5.4 Creating Future Migrations
+When adding any new database entities, fields, or indexes in the future, always run the migrations CLI tool with the correct output target directory so they are placed in our standardized namespace:
+
+```bash
+dotnet ef migrations add <YourMigrationName> -o Persistence/Migrations
+```
