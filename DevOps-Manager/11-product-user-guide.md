@@ -44,8 +44,9 @@ Welcome to the DevOps Manager. This tool allows you to safely deploy, monitor, a
 **How to Deploy PROD:**
 1. Navigate to the **Deployment Center**.
 2. Select your Product and select the **PROD** environment.
-3. Click **Deploy to Production**.
-4. **Important**: A secondary confirmation prompt will appear. Ensure the target branch is correct before clicking Confirm.
+3. **Strict Branch Lock**: For security, production deployments are strictly locked to the `'master'` branch. The branch input field is disabled and set to `'master'` automatically.
+4. Click **Deploy to Production**.
+5. **Important**: A secondary confirmation prompt will appear. Confirm the deployment details to trigger execution.
 
 ### 4. Monitoring & Logs
 **How to Restart Containers:**
@@ -105,8 +106,35 @@ Restoring a backup (either database dumps or uploads folders) is a destructive o
 2. Here you can see every action taken by every user (e.g., "John deployed App-PROD", "Jane restarted Container-UAT").
 3. Click **View Details** to see the exact shell output of a deployment.
 
-### 8. Safety Instructions for Production
+### 8. Automated CI/CD Webhooks (GitHub / GitLab Integration)
+DevOps Manager enables hands-free continuous delivery. You can configure your repository to automatically notify DevOps Manager whenever code is pushed to your development or production branches.
+
+#### How to configure Git Webhooks:
+1. **Enable Webhooks on DevOps Manager**:
+   - Go to **Project Services** (under registry management).
+   - Click **Edit** next to the specific service environment you want to integrate (e.g. `SalesBooster - UAT` or `SalesBooster - PROD`).
+   - Scroll down to the **Automated CI/CD Webhooks** card and toggle the switch to **Active**.
+   - **Production Webhook Branch Lock**: For services running in the **PROD** environment, the Webhook Target Branch is strictly locked to `'master'`. Webhooks will ignore pushes on any other branch.
+   - If the service already exists, a **Payload URL** will be displayed immediately.
+   - Click **Copy** to copy the complete Payload URL to your clipboard.
+   - Click **Update** to save your service configuration.
+
+2. **Configure Webhook on GitHub**:
+   - Navigate to your repository page on GitHub.
+   - Click on **Settings** (top navigation tab) and select **Webhooks** in the left sidebar menu.
+   - Click **Add Webhook** in the top-right corner.
+   - **Payload URL**: Paste the URL you copied from the DevOps Manager (it includes your secure secret token).
+   - **Content type**: Select **`application/json`** (this is critical so that payload variables are parsed correctly).
+   - **Which events would you like to trigger this webhook?**: Choose **Just the `push` event**.
+   - Click **Add webhook** at the bottom to save.
+
+3. **Verify Deployment Traceability**:
+   - Push some code to your repository branch.
+   - GitHub will instantly send a push notification. DevOps Manager will authorize the secret, parse the pushed branch from the JSON payload, and run `ExecuteDeploymentAsync` asynchronously in a background thread.
+   - In **Audit Logs** or the **Deploy Dashboard**, you will see a new active deployment log with `ExecutedBy: Git Webhook (push)` alongside the exact branch that triggered the rebuild.
+
+### 9. Safety Instructions for Production
 - **Never expose raw passwords**: Do not echo passwords in environment variables that might be printed to logs.
-- **Double-Check Branch Names**: Always ensure you are deploying the `main`/`master` branch to PROD.
+- **Production Is Locked to Master**: To prevent accidental or unauthorized deployments of experimental code, both manual and automated (webhook-triggered) production deployments are locked to the `'master'` branch. The backend and frontend strictly enforce this constraint.
 - **Maintenance Mode**: If you are performing a database migration, toggle the Maintenance Mode in the settings to gracefully inform end-users.
 - **Backups First**: Always generate a fresh Database Backup before deploying a major release to PROD.

@@ -48,3 +48,7 @@
 | TC-P-02 | Database Restore | Upload backup file to restore PROD DB. | System prompts user to type the database name explicitly to confirm. |
 | TC-P-03 | Docker Cleanup | Execute system prune. | System displays exactly which active containers/volumes will NOT be touched. |
 | TC-P-04 | Audit Logs | SuperAdmin restarts a PROD container. | Action is permanently recorded in Audit Logs with Timestamp, User, and IP. |
+| TC-P-05 | PROD Deploy | Select Prod service on manual deployment screen. | Input field for branch is auto-filled with `'master'`, disabled, and shows warning notice. |
+| TC-P-06 | PROD Deploy (API) | Call API to deploy PROD service with branch `'develop'`. | Server rejects request and throws `ArgumentException` stating production deployment is only allowed from the master branch. |
+| TC-P-07 | Webhook Config | Select Prod environment in service configuration modal. | Webhook branch input is locked to `'master'`, disabled, and displays lock message. |
+| TC-P-08 | Webhook Config (API) | Create/update Prod service webhook with non-master branch via API. | Server rejects request and throws `ArgumentException` stating webhook branch for production must be 'master'. |

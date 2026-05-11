@@ -19,13 +19,20 @@ The DevOps specific screens found:
 - **API**: `GET /api/Monitoring/system`, `GET /api/Monitoring/projects`.
 
 ### 2. Products & Environments
-- **Purpose**: Manage the registry.
-- **Fields/Elements**: Add Product (Name, Git Repo). Add Environment (Branch, Directory Path, Container Name, Env Variables).
-- **API**: `/api/Project`, `/api/ProjectService`.
+- **Purpose**: Manage the registry of projects and microservice environments.
+- **Fields/Elements**: Add/Edit Product (Name, Git Repo). Add/Edit Environment (Branch, Directory Path, Container Name, Environment URL, Database Name, Uploads folder path).
+- **Automated CI/CD Webhook Panel (Completed)**:
+  - Adds a dynamic toggle to enable/disable automated webhook builds.
+  - Generates a unique, copyable GitHub/GitLab webhook payload URL complete with a secure access token.
+  - Displays a live pulsing emerald beacon verifying active integration status.
+  - Adds an on-demand "Rotate Token" warning action button to rotate credentials if compromised.
+  - **Webhook Target Branch Locks (New)**: If the service environment is set to `Prod`, the webhook target branch input is disabled, auto-populated to `'master'`, and shows a lock warning: *"Production services are locked to the 'master' branch."*
+- **API**: `/api/Project`, `/api/ProjectService`, `/api/ProjectService/{id}/rotate-webhook-token`.
 
 ### 3. Deployment Center
 - **Purpose**: Execute deployments safely.
 - **Fields/Elements**: Dropdown for Product, Dropdown for Environment, Dropdown for Branch/Tag.
+- **Safety Locks (New)**: If a service belonging to the **Production (`Prod`)** environment is selected, the branch input field is locked to `'master'`, disabled for custom editing, and shows a warning description indicating: *"Production deployment is locked to the 'master' branch."*
 - **Buttons**: `Deploy`. If PROD is selected, `Deploy` button changes color to Red and triggers a confirmation modal.
 - **API**: `POST /api/Deploy/execute`.
 

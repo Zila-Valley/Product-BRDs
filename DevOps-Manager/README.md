@@ -36,3 +36,6 @@ Welcome to the documentation for the DevOps Manager project. This suite of docum
 
 11. [11 Product User Guide](./11-product-user-guide.md)
     *Admin/User manual for operating the DevOps Manager safely.*
+
+12. [12 Completed Achievements & Roadmap Status](./12-completed-achievements-and-next-steps.md)
+    *Detailed milestones review summarizing delivered features (Phases 1-4) and presenting Phase 5 Enterprise recommendations.*

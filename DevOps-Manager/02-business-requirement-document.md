@@ -46,6 +46,7 @@ To provide a secure, centralized, and automated DevOps Manager for deploying, mo
 - Automated `git pull`, `docker compose build`, and `docker compose up`.
 - Deployment history tracking with success/failure statuses and executed logs.
 - Mandatory approval workflow or confirmation for PROD deployments.
+- **Production Guardrails**: Production environment deployments are strictly restricted to the `master` branch only. Webhook target branches for production services must also be locked to `master` only.
 
 ### Container Runtime Management
 - Dashboard listing all containers with CPU, Memory, and Uptime metrics.

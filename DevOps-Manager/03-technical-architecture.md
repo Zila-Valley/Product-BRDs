@@ -92,6 +92,8 @@ Uses a common PostgreSQL instance.
 - Identity via JWT.
 - Roles defined in the database (e.g., SuperAdmin, DevOpsAdmin).
 - Commands are not arbitrary. Only specific bash sequences are built in the backend (e.g., `git checkout {branch} && docker compose build`).
+- **Strict Environment Safety Guardrails:** Deployment commands for Production services (`ProjectEnvironment.Prod`) are strictly restricted in the backend to the `master` branch. The backend throws an `ArgumentException` and halts execution if any other branch is requested.
+- **Webhook Branch Enforcement:** Creating or editing a Webhook trigger for any Production service requires the target branch to be configured to `'master'`. The service layer validates this automatically.
 
 ## Deployment Architecture on Hostinger
 - **VPS Host**: Runs Traefik as the main entrypoint.

@@ -12,6 +12,7 @@
   - **Auth**: Required (`SuperAdmin` role).
   - **Request Body**: `{ "serviceId": "guid", "branch": "string" }`
   - **Response**: `DeploymentLogDTO`.
+  - **Guardrails**: If the selected service belongs to the **Production (`Prod`)** environment, the `branch` parameter must be `"master"` (case-insensitive). If any other branch is provided, the API rejects the request with an `ArgumentException` stating: *"Production deployment is only allowed from the 'master' branch."*
 - **`GET /api/Deploy/logs`**
   - **Purpose**: Paginated list of deployment logs.
   - **Query Params**: `startDate`, `endDate`, `page`, `pageSize`.
@@ -19,6 +20,23 @@
   - **Purpose**: Get specific deployment log.
 - **`GET /api/Deploy/logs/project/{projectName}`**
   - **Purpose**: Get logs for a specific project.
+- **`POST /api/Deploy/webhook/{serviceId}`**
+  - **Purpose**: **Git Webhook Trigger** (anonymous) to automatically build/rebuild container on push events.
+  - **Auth**: None (anonymous allowed with `token` verification query param).
+  - **Query Params**: `token` (string) - the secure secret token.
+  - **Request Body (Optional JSON)**: GitHub/GitLab JSON push payload (e.g. `{"ref": "refs/heads/master"}`).
+  - **Response**: `202 Accepted` - returns instantly to avoid push server timeouts; builds container in a background worker thread.
+  - **Guardrails**: If the service belongs to the **Production (`Prod`)** environment, the webhook will strictly ignore pushes on any branch other than `"master"` and bypass deployment.
+- **`POST /api/ProjectService/{id}/rotate-webhook-token`**
+  - **Purpose**: Rotates the secret cryptographically secure webhook token for the specified service configuration.
+  - **Auth**: Required (`SuperAdmin` role).
+  - **Response**: Updated `ProjectServiceDTO` with new token.
+- **`POST /api/ProjectService`** & **`PUT /api/ProjectService/{id}`**
+  - **Purpose**: Create or update project service configurations (directories, webhook configs, etc.).
+  - **Auth**: Required.
+  - **Request Body**: `ProjectServiceInput`
+  - **Response**: Created/updated `ProjectServiceDTO`.
+  - **Guardrails**: If the service environment is configured as `Prod` and `WebhookEnabled` is true, `WebhookBranch` must be `"master"` (case-insensitive). Saving or updating with any other branch value throws an `ArgumentException` stating: *"Webhook branch for production must be 'master'."*
 
 ### 2. Monitoring API
 - **`GET /api/Monitoring/system`**
