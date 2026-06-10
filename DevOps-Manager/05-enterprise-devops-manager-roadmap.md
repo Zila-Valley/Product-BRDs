@@ -46,7 +46,7 @@
 
 **Features / Tasks**:
 - **Production Approval Workflow**: When deploying to PROD, require a second authorized user (SuperAdmin) to approve the request before execution.
-- **Rollback Manager**: Track Docker image tags. Add a UI button to redeploy the previous tag instantly.
+- **Rollback Manager (In Progress)**: Track Docker image tags and use a local container registry. Add a UI button to redeploy the previous tag instantly. Currently being actively developed and tested on the `local_container_registry` branch.
 - **Secrets Management**: Move environment variables out of raw `docker-compose.yml` into the database, masking sensitive values in the UI.
 - **Audit Reports**: Generate PDF/CSV reports of all deployments, cleanups, and restores.
 - **Testing Requirements**: Verify that a Developer role cannot bypass the PROD approval workflow. Verify secrets are not leaked in the `/api/Deploy/logs` endpoint.

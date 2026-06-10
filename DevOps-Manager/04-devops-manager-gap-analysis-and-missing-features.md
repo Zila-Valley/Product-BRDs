@@ -15,7 +15,7 @@ This document compares the current implementation of the DevOps Manager against 
 | **Deployment Logs/History** | Exists (`DeployController`) | High | - | Low | - |
 | **Git Pull Support** | Exists (`DeployService`) | High | - | Low | - |
 | **Docker Compose Up/Restart** | Exists | High | - | Low | - |
-| **Rollback Support** | **Missing** | High | Prolonged downtime on bad deploy | High | P1 |
+| **Rollback Support** | **In Progress** (`local_container_registry` branch) | High | Prolonged downtime on bad deploy | High | P1 |
 | **Image List & Pruning** | Partial (Global prune only) | Medium | Disk space exhaustion | Medium | P2 |
 | **Container/Volume Pruning** | Partial (Global prune only) | Medium | Disk space exhaustion | Medium | P2 |
 | **Disk Usage Dashboard** | Exists (`MonitoringController`) | High | - | Low | - |
@@ -55,9 +55,10 @@ This document compares the current implementation of the DevOps Manager against 
 **Issue**: The `CleanupDockerAsync` runs `docker image prune -a -f` which aggressively deletes all unused images. If a new deployment fails, rolling back will take significantly longer because the previous image was deleted.
 **Fix**: Add a "Preview" feature. Show exactly what will be deleted and how much space will be saved before executing the cleanup.
 
-### 4. Rollback Support (P1)
+### 4. Rollback Support (P1) - [IN PROGRESS]
 **Issue**: If a deployment introduces a critical bug, there is no one-click way to revert to the previous container image.
-**Fix**: Track image tags per deployment and implement a "Redeploy previous version" button.
+**Fix**: Track image tags per deployment and implement a "Redeploy previous version" button. 
+*Update*: This is currently being implemented on the `local_container_registry` branch, which introduces local Docker registry version tagging and automated transactional rollback capabilities across database, files, and Git state.
 
 ### 5. Frontend Bloat
 **Issue**: The React app contains legacy routes like `Courses`, `Students`, and `FeeManagement`.

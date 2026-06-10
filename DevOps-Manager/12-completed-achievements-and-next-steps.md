@@ -52,7 +52,7 @@ We have successfully closed all major technical gaps from the original discovery
 ### 4. Enterprise Production Safety Locks & Transactional Rollbacks (Phase 5 - Finished)
 * **Strict Production Branch Locking**: Form branch inputs in both `Deploy` manual triggers and `ProjectService` webhook configurations lock to `'master'` and are disabled when the user selects `Prod` environment, showing a clean warning notice badge below the input.
 * **Server-side Deployment Guardrails**: Handled server-side validation and rejection of non-`master` deployment requests on `Prod` environment services inside `DeployService`, completely stopping rogue code builds on production.
-* **One-Click Transactional Rollback Engine**: Engineered an automated deployment pipeline in `DeployService.cs` that takes full database dumps (`pg_dump`) and files zip backups before pulling updates, saves current git code state using temporary checkout branch checkpoints, attempts container rebuild/recreation, runs unit/integration tests (`dotnet test` or `npm test` automatically depending on stack), and automatically rolls back everything (database, files, git branch, and container) to original state if any step fails.
+* **One-Click Transactional Rollback Engine**: *[Currently in testing on the `local_container_registry` branch]* Engineered an automated deployment pipeline in `DeployService.cs` that takes full database dumps (`pg_dump`) and files zip backups before pulling updates, saves current git code state using temporary checkout branch checkpoints, attempts container rebuild/recreation, runs unit/integration tests (`dotnet test` or `npm test` automatically depending on stack), and automatically rolls back everything (database, files, git branch, and container) to original state if any step fails.
 * **Comprehensive Automated Unit Testing**: Added robust test coverage in `DeployServiceTests.cs` to test both environment-branch lock validations and deployment-rollback transaction logging.
 
 ## 🚀 Recommended Phase 6 Improvements: Cloud-Scale & Immutable Architecture
@@ -61,7 +61,7 @@ Now that our primary Phase 5 Enterprise Governance systems (Production safety br
 
 ### 🧱 Improvement 1: Build Isolation via Private Container Registry (Phase 6)
 > [!IMPORTANT]
-> Removes the resource overhead of compiling and building docker images directly on active production machines.
+> Removes the resource overhead of compiling and building docker images directly on active production machines. Currently in active development on the `local_container_registry` branch.
 * **Concept**: Source code compilation and image creation run on a remote build server, pushing a finalized, immutable Docker image to a Secure Registry (e.g. AWS ECR, GitHub Packages).
 * **How to implement**:
   1. Set up a remote build runner (e.g., GitHub Actions, GitLab CI, or a dedicated build node).
