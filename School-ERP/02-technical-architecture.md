@@ -7,6 +7,7 @@ The School ERP system is a modern, cloud-native, multi-tenant application design
 - **Backend:** Monolithic API with a Modular structure. Built using **.NET Core 10**. Uses the Repository-Service pattern.
 - **Frontend:** Single Page Application (SPA) built with **React 19** and **Vite**.
 - **Mobile:** Cross-platform application built using **Flutter**.
+- **AI Microservice:** Stateless, high-performance API built with **Python**, **FastAPI**, and **Celery** for CV/LLM workloads.
 - **Database:** Relational database utilizing **PostgreSQL** (via Npgsql) with Entity Framework Core (EF Core) as the ORM.
 
 ## 3. Backend Architecture
@@ -52,6 +53,10 @@ graph TD
     end
     
     DataAccess --> Database[(PostgreSQL)]
+    
+    API_Gateway <--> AIService[AI Microservice - FastAPI]
+    AIService -.-> CV[Computer Vision/OMR]
+    AIService -.-> LLM[Local/Remote LLMs]
     
     API_Gateway --> ThirdParty[3rd Party Services]
     ThirdParty -.-> SMS[Msg91]

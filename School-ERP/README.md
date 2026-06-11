@@ -20,6 +20,7 @@ This repository contains comprehensive guides spanning business requirements, te
 | [10. Product User Guide](./10-product-user-guide.md) | End-user manual for operating the ERP web portal. |
 | [11. Mobile App Documentation](./11-mobile-app-documentation.md) | Flutter application architecture and feature flows. |
 | [12. Role & Permission Matrix](./12-role-permission-matrix.md) | Comprehensive breakdown of system roles, RBAC, and permission mappings. |
+| [13. AI Features & Services](./13-ai-features.md) | Overview of AI integrations including OMR, lesson planning, and OCR. |
 
 ## Folder Structure
 - `/modules/` - Contains detailed functional documentation specific to individual ERP modules (e.g., Admissions, Fees, Attendance).

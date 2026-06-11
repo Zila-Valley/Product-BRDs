@@ -64,6 +64,7 @@ A cloud-native, responsive web and mobile application that integrates all core m
 - **Finance:** Fee collection, concessions, transport/hostel fees, and general accounting ledgers.
 - **HR & Payroll:** Staff attendance, leave management, and role-wise compensation.
 - **Communication:** SMS, Email, WhatsApp, and in-app push notifications.
+- **AI Integrations:** Automated OMR grading, AI-generated lesson plans and homework, math-to-LaTeX conversion, and high-performance OCR.
 
 ### 11. High-Level Non-Functional Requirements
 - **Performance:** APIs must respond within 200ms under standard load. UI should load under 2 seconds.
