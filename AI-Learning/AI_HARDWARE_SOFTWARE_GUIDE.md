@@ -108,3 +108,8 @@ AMD rebranded their laptop chips to emphasize their NPU capabilities.
 Apple relies on their custom M-series chips (M1, M2, M3, M4), which have featured powerful NPUs (called the **"Neural Engine"**) for years.
 *   **The Name:** **Apple Intelligence**
 *   **What it means:** Apple branded their suite of AI features as "Apple Intelligence," which runs locally on any Mac equipped with an M-series chip.
+
+### Note:
+If you are buying an "AI Laptop" today for development or general use:
+*   If you want an Intel machine, look for **Intel Core Ultra 5 or 7**.
+*   If you want the ultimate local AI features in Windows, ensure the laptop has the **"Copilot+ PC"** badge (which guarantees a 40+ TOPS NPU).
