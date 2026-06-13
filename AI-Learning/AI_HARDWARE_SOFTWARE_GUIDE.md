@@ -73,3 +73,38 @@ If you are deploying an LLM to production for thousands of users, standard PyTor
 
 ### 5. Deployment Environment (Docker)
 Because AI software dependencies (specific versions of CUDA, PyTorch, and Python) conflict easily and break often, AI engineers almost exclusively deploy models using **Docker Containers**. This ensures that the environment on the developer's laptop exactly matches the production Linux server.
+
+---
+
+## 4. The "AI Laptop" & NPUs (Consumer Hardware)
+
+If you are buying a laptop for development or general use, you will see heavy marketing around "AI Laptops". This simply means the laptop has an **NPU (Neural Processing Unit)** built into its processor.
+
+An NPU is a tiny, highly efficient chip dedicated solely to running small AI models locally on your laptop without draining your battery or sending data to the cloud (e.g., blurring your background on Zoom, or translating live audio).
+
+Here is how different companies brand their AI/NPU hardware:
+
+### 1. Intel ("Core Ultra")
+Intel dropped their famous "Core i5 / i7" naming convention to highlight their new NPU chips.
+*   **The Name:** **Intel Core Ultra 5, Ultra 7, Ultra 9**
+*   **What it means:** A laptop with an "Intel Core Ultra" processor (Meteor Lake / Lunar Lake architecture) contains a built-in NPU for local AI tasks.
+
+### 2. Microsoft ("Copilot+ PC")
+Microsoft created a strict hardware certification program for Windows laptops.
+*   **The Name:** **Copilot+ PC**
+*   **What it means:** To earn this badge, a laptop's NPU must be capable of at least **40 TOPS** (Trillion Operations Per Second). Only Copilot+ PCs can run advanced local Windows AI features like *Recall* and *Cocreator*.
+
+### 3. Qualcomm ("Snapdragon X")
+To power the first wave of Microsoft's Copilot+ PCs, laptop makers used Qualcomm's ARM-based smartphone chip architecture.
+*   **The Name:** **Snapdragon X Elite** and **Snapdragon X Plus**
+*   **What it means:** These ARM processors offer incredible battery life and massive 45 TOPS NPUs, making them the standard for the first Copilot+ AI Laptops.
+
+### 4. AMD ("Ryzen AI")
+AMD rebranded their laptop chips to emphasize their NPU capabilities.
+*   **The Name:** **AMD Ryzen AI 300 Series** (e.g., Ryzen AI 9 HX 370).
+*   **What it means:** These chips include powerful built-in NPUs that easily meet Microsoft's Copilot+ requirements.
+
+### 5. Apple ("Apple Intelligence")
+Apple relies on their custom M-series chips (M1, M2, M3, M4), which have featured powerful NPUs (called the **"Neural Engine"**) for years.
+*   **The Name:** **Apple Intelligence**
+*   **What it means:** Apple branded their suite of AI features as "Apple Intelligence," which runs locally on any Mac equipped with an M-series chip.
